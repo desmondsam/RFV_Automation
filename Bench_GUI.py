@@ -20,6 +20,11 @@ with st.sidebar:
         st.image(image)
     st.header('Devices')
     device = st.radio('Pick a Device', ['Power Supply', 'Switch', 'Analyzer'], help='KS Power Supply (N5767),  KS Switch  (or)  R&S FSV')
+    supp_stat = st.empty()
+    st.text_input(label='Power Supply IP', value='192.168.255.207', key='pwr_supp_ip')
+    st.text_input(label='Master Switch IP', value='192.168.255.204', key='m_switch_ip')
+    st.text_input(label='Slave Switch IP', value='192.168.255.206', key='s_switch_ip')
+    st.text_input(label='Signal Analyzer IP', value='192.168.255.202', key='fsv_ip')
 
 with col1:
     e11 = st.empty()
@@ -39,14 +44,14 @@ with col2:
     e62 = st.empty()
     e72 = st.empty()
 
+full_pg_header = st.empty()
 full_page = st.empty()
-ip_exp = st.expander('Update Device IP')
 info_bar = st.empty()
 stat_bar = st.empty()
 
 if(device == 'Power Supply'):
     e11.header('Power Supply')
-    ip_val = ip_exp.text_input(label='Power Supply IP', value='192.168.255.207')
+    ip_val = st.session_state.pwr_supp_ip
     try:
         usupp = PwrSupplyHandler(ip_val)
     except VisaIOError:
@@ -56,10 +61,6 @@ if(device == 'Power Supply'):
         if 'ps_state' not in st.session_state:
             supp_state = usupp.query('OUTP?')
             st.session_state['ps_state'] = supp_state
-
-        with st.sidebar:
-
-            stat_b = st.empty()
 
         e12.header('DC Settings')
 
@@ -91,23 +92,19 @@ if(device == 'Power Supply'):
             stat_bar.success(f'Power Supply Limits set to Voltage : {volt_lmt} V, Current : {curr_lmt} A')
         
         if(st.session_state['ps_state']==True):
-            stat_b.success('Supply is : ON')
+            supp_stat.success('Supply is : ON')
         else:
-            stat_b.error('Supply is : OFF')
+            supp_stat.error('Supply is : OFF')
         usupp.close()
+    else:
+        stat_bar.error('Cannot communicate with current IP. Please update IP')
 
 elif(device == 'Switch'):
     e11.header('Switch')
-    ipcol1, ipcol2 = ip_exp.columns(2)
-    with ipcol1:
-        m_switch_ip = st.text_input('Master Switch IP', '192.168.255.204')
-    with ipcol2:
-        s_switch_ip = st.text_input('Slave Switch IP', '192.168.255.206')
-    
     try:
-        mswitch = KSSwitchHandler(tcp_ip=m_switch_ip)
+        mswitch = KSSwitchHandler(tcp_ip=st.session_state.m_switch_ip)
         try:
-            sswitch = KSSwitchHandler(tcp_ip=s_switch_ip)
+            sswitch = KSSwitchHandler(tcp_ip=st.session_state.s_switch_ip)
         except VisaIOError:
             stat_bar.warning('Cannot communicate with Slave Switch. Antenna Selection Limited to 32')
             sswitch = None
@@ -142,7 +139,7 @@ elif(device == 'Switch'):
                 mswitch.switch_ant(ant)
             else:
                 if(sswitch and sswitch.device):
-                    sswitch.slave_switch_ant(ant, master_switch_ip=m_switch_ip, rf_source=from_gen)
+                    sswitch.slave_switch_ant(ant, master_switch_ip=st.session_state.m_switch_ip, rf_source=from_gen)
             stat_bar.success(f'Switched to Port {ant} directing {switch_dir}')
         
         if att_changed:
@@ -152,9 +149,12 @@ elif(device == 'Switch'):
         mswitch.close()
         if(sswitch and sswitch.device):
             sswitch.close()
+    else:
+        stat_bar.error('Cannot communicate with Master Switch IP. Please update IP')
 
 elif(device == 'Analyzer'):
-    ip_val = ip_exp.text_input('Analyzer IP', '192.168.255.202')
+    full_pg_header.header('Spectrum Analyzer')
+    ip_val = st.session_state.fsv_ip
     try:
         fsv = FSVHandler(tcp_ip=ip_val)
     except VisaIOError:
@@ -162,7 +162,7 @@ elif(device == 'Analyzer'):
         fsv = None
     if(fsv and fsv.device):
         freq_form = full_page.form('Sanalyzer_Freq')
-        freq_form.header('Spectrum Analyzer')
+        # freq_form.header('FSV')
         ff_c1, ff_c2 = freq_form.columns(2)
         freq_val = ff_c1.number_input('Frequency(MHz)', value=3840)
         ant = ff_c1.selectbox('Antenna', range(1,65))
@@ -179,3 +179,5 @@ elif(device == 'Analyzer'):
                 info_bar.info(f'Reference Level Offset set to {ref_lvl_offs} dB')
             stat_bar.success(f'Center Frequency Set to {freq_val} MHz')
         fsv.close()
+    else:
+        stat_bar.error('Cannot communicate with Analyzer IP. Please update IP')
