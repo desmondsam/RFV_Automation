@@ -1,0 +1,52 @@
+name: MidasRFV
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - bcrypt=3.2.0=py39h196d8e1_0
+  - blas=1.0=mkl
+  - ca-certificates=2021.7.5=haa95532_1
+  - certifi=2021.5.30=py39haa95532_0
+  - cffi=1.14.6=py39h2bbff1b_0
+  - cryptography=3.4.7=py39h71e12ea_0
+  - et_xmlfile=1.1.0=py39haa95532_0
+  - importlib-metadata=3.9.0=py39hcbf5309_0
+  - intel-openmp=2020.3=h57928b3_311
+  - jdcal=1.4.1=py_0
+  - libblas=3.9.0=8_mkl
+  - libcblas=3.9.0=8_mkl
+  - liblapack=3.9.0=8_mkl
+  - libusb=1.0.24=h0e60522_1
+  - mkl=2020.4=hb70f87d_311
+  - mkl-service=2.3.0=py39h196d8e1_0
+  - mkl_fft=1.3.0=py39h46781fe_0
+  - mkl_random=1.0.2=py39h848d8c7_0
+  - numpy=1.19.2=py39h729668d_0
+  - numpy-base=1.19.2=py39hbd0edd7_0
+  - openpyxl=3.0.7=pyhd3eb1b0_0
+  - openssl=1.1.1l=h2bbff1b_0
+  - pandas=1.2.4=py39hd77b12b_0
+  - paramiko=2.7.2=py_0
+  - pip=21.0.1=pyhd8ed1ab_0
+  - pycparser=2.20=py_2
+  - pynacl=1.4.0=py39hbd8134f_1
+  - pyserial=3.5=pyhd8ed1ab_0
+  - python=3.9.2=h7840368_0_cpython
+  - python-dateutil=2.8.1=py_0
+  - python_abi=3.9=1_cp39
+  - pytz=2021.1=pyhd8ed1ab_0
+  - pyusb=1.1.1=pyh44b312d_0
+  - pyvisa=1.11.3=py39hcbf5309_1
+  - pyvisa-py=0.5.2=pyh44b312d_0
+  - pywin32=228=py39he774522_0
+  - setuptools=49.6.0=py39hcbf5309_3
+  - six=1.15.0=pyh9f0ad1d_0
+  - sqlite=3.35.3=h8ffe710_0
+  - typing_extensions=3.7.4.3=py_0
+  - tzdata=2021a=he74cb21_0
+  - vc=14.2=hb210afc_4
+  - vs2015_runtime=14.28.29325=h5e1d092_4
+  - wheel=0.36.2=pyhd3deb0d_0
+  - wincertstore=0.2=py39hcbf5309_1006
+  - zipp=3.4.1=pyhd8ed1ab_0
+prefix: C:\Users\Demo\anaconda3\envs\MidasRFV
