@@ -21,10 +21,11 @@ with st.sidebar:
     st.header('Devices')
     device = st.radio('Pick a Device', ['Power Supply', 'Switch', 'Analyzer'], help='KS Power Supply (N5767),  KS Switch  (or)  R&S FSV')
     supp_stat = st.empty()
-    st.text_input(label='Power Supply IP', value='192.168.255.207', key='pwr_supp_ip')
-    st.text_input(label='Master Switch IP', value='192.168.255.204', key='m_switch_ip')
-    st.text_input(label='Slave Switch IP', value='192.168.255.206', key='s_switch_ip')
-    st.text_input(label='Signal Analyzer IP', value='192.168.255.202', key='fsv_ip')
+    ip_exp = st.expander('Update Device IP')
+    ip_exp.text_input(label='Power Supply IP', value='192.168.255.207', key='pwr_supp_ip')
+    ip_exp.text_input(label='Master Switch IP', value='192.168.255.204', key='m_switch_ip')
+    ip_exp.text_input(label='Slave Switch IP', value='192.168.255.206', key='s_switch_ip')
+    ip_exp.text_input(label='Signal Analyzer IP', value='192.168.255.202', key='fsv_ip')
 
 with col1:
     e11 = st.empty()
@@ -162,7 +163,6 @@ elif(device == 'Analyzer'):
         fsv = None
     if(fsv and fsv.device):
         freq_form = full_page.form('Sanalyzer_Freq')
-        # freq_form.header('FSV')
         ff_c1, ff_c2 = freq_form.columns(2)
         freq_val = ff_c1.number_input('Frequency(MHz)', value=3840)
         ant = ff_c1.selectbox('Antenna', range(1,65))
