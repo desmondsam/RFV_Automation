@@ -9,8 +9,6 @@ import General_Utils
 import VC_Datasets_RX
 
 from TestMacApp import TestMacSSH
-from KS_VXG_SigGen import VXGHandler
-from KS_Switch import KSSwitchHandler
 from Pwr_Supply import PwrSupplyHandler
 from Tenney_TempChamber import Tenney_TempChamber
 from RS_SMW_SigGen import SMWHandler
@@ -21,10 +19,7 @@ class RXTestSequencer():
         self.sig_gen = SMWHandler(sig_gen_ip, cust_name = 'SigGen')
         self.ztm4sp8t_ip = ztm4sp8t_ip
         self.ztm8_ip = ztm8_ip
-        # self.m_switch = KSSwitchHandler(m_switch_ip, cust_name = 'MasterSwitch')
-        # self.s_switch = KSSwitchHandler(s_switch_ip, cust_name = 'SlaveSwitch')
         # self.ru_pwr_supply = PwrSupplyHandler(pwr_supp_ip, cust_name = 'RUPwrSupply')
-        # self.master_switch_ip = m_switch_ip
         self.T1 = TestMacSSH(server = du_ip)
         self.T2 = TestMacSSH(server = du_ip)
         self.T3 = TestMacSSH(server = du_ip)
@@ -126,7 +121,7 @@ class RXTestSequencer():
                             if(sequences['Sensitivity']):
                                 sens_res = self.meas_sensitivity(rf_lvl=sens_start_lvl)
                                 status = VC_Datasets_RX.validate_data(meas_res=sens_res[0], spec_min=None, spec_max=-90)
-                                results.append(VC_Datasets_RX.generate_dataset(loop=loop, pipe=pipe, testName='Sensitivity', measName='Static_Sensitivity', tx_freq=None, tx_pwr=None, tx_bw=100, rx_freq=freq, rx_ws_lvl=sens_res[0], rx_bw=100, rx_channel='Middle', test_mode='3GPP', bler=sens_res[1], bler_limit=5, spec_min=None, spec_max=-90, res=sens_res[0], unit='dBm', status=status))
+                                results.append(VC_Datasets_RX.generate_dataset(loop=loop, pipe=pipe, testName='Sensitivity', measName='Static_Sensitivity', tx_freq=None, tx_pwr=None, tx_bw=100, rx_freq=freq, rx_ws_lvl=sens_res[0], rx_bw=100, rx_channel='Middle', test_mode='3GPP', bler=sens_res[1], spec_min=None, spec_max=-90, res=sens_res[0], unit='dBm', status=status, res_col='BLER'))
         except KeyboardInterrupt:
             print('Manual Interrupt')
         except Exception as e:

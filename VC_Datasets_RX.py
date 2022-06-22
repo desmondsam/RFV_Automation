@@ -17,12 +17,12 @@ DataSet = nt('DataSet', [
             'RX_Channel',
             'Test_Mode',
             'BLER',
-            'BLER_Limit',
             'Spec_Min',
             'Spec_Max',
             'Meas_Result',
             'Unit',
             'Status',
+            'Result_Field',
             'Interferer_1_Lvl',
             'Interferer_1_Freq',
             'Interferer_1_Type',
@@ -45,7 +45,7 @@ DataSet = nt('DataSet', [
             ])
 # Specs = nt('Specs', ['spec_min', 'spec_max'])
 
-def generate_dataset(loop,pipe,testName,measName,tx_freq,tx_pwr,tx_bw,rx_freq,rx_ws_lvl,rx_bw,rx_channel,test_mode,bler,bler_limit,spec_min,spec_max,res,unit,status=None,is_1_lvl=None,is_1_freq=None,is_1_type=None,is_2_Lvl=None,is_2_freq=None,is_2_type=None,temp=None,tm=None,noc=None,sig_file_name=None,rx0_rssi=None,rx1_rssi=None,rx0_snr_avg=None,rx0_snr_min=None,rx0_snr_max=None,rx0_ta_avg=None,rx0_ta_min=None,rx0_ta_max=None,tc_num=None):
+def generate_dataset(loop,pipe,testName,measName,tx_freq,tx_pwr,tx_bw,rx_freq,rx_ws_lvl,rx_bw,rx_channel,test_mode,bler,spec_min,spec_max,res,unit,status=None,res_col=None,is_1_lvl=None,is_1_freq=None,is_1_type=None,is_2_Lvl=None,is_2_freq=None,is_2_type=None,temp=None,tm=None,noc=None,sig_file_name=None,rx0_rssi=None,rx1_rssi=None,rx0_snr_avg=None,rx0_snr_min=None,rx0_snr_max=None,rx0_ta_avg=None,rx0_ta_min=None,rx0_ta_max=None,tc_num=None):
     return DataSet(
         Date = General_Utils.curr_date_mdy(),
         Time = General_Utils.curr_time_ampm(),
@@ -62,12 +62,12 @@ def generate_dataset(loop,pipe,testName,measName,tx_freq,tx_pwr,tx_bw,rx_freq,rx
         RX_Channel=rx_channel,
         Test_Mode=test_mode,
         BLER=bler,
-        BLER_Limit=bler_limit,
         Spec_Min=spec_min,
         Spec_Max=spec_max,
         Meas_Result=res,
         Unit=unit,
         Status=status,
+        Result_Field = res_col,
         Interferer_1_Lvl=is_1_lvl,
         Interferer_1_Freq=is_1_freq,
         Interferer_1_Type=is_1_type,
@@ -95,23 +95,26 @@ def validate_data(meas_res, spec_min, spec_max):
     return 'PASS'
 
 if __name__ == '__main__':
-    # res = generate_dataset(
-    #     loop=1,
-    #     pipe=1,
-    #     testName='Sensitivity',
-    #     measName='BLER',
-    #     tx_freq=3840,
-    #     tx_pwr=37,
-    #     tx_bw=100,
-    #     rx_freq=3840,
-    #     rx_ws_lvl=-77,
-    #     rx_bw=100,
-    #     rx_channel='Middle',
-    #     bler=0.43,
-    #     spec_min=None,
-    #     spec_max=5,
-    #     res=0.35,
-    #     unit='%',
-    # )
+    res = generate_dataset(
+        loop=1,
+        pipe=1,
+        testName='Sensitivity',
+        measName='BLER',
+        tx_freq=3840,
+        tx_pwr=37,
+        tx_bw=100,
+        rx_freq=3840,
+        rx_ws_lvl=-77,
+        rx_bw=100,
+        rx_channel='Middle',
+        test_mode='3GPP',
+        bler=0.43,
+        spec_min=None,
+        spec_max=5,
+        res=0.35,
+        unit='%',
+        res_col='BLER'
+    )
+    print(res)
     # General_Utils.namTupList_to_spreadsheet([res], 'testRx', r'C:\Zulu\Test_Sequence_Data')
-    print(validate_data(6.5, None, 5))
+    # print(validate_data(6.5, None, 5))
