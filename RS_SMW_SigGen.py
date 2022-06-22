@@ -12,12 +12,16 @@ class SMWHandler(visa_connections.DeviceHandler):
         time.sleep(2)
     
     def set_rf_level(self, level = -10, channel=1):
-        self.write(f'SOUR{channel}:POW:POW {level}')
+        self.write(f'SOUR{channel}:POW:LEV:IMM:AMPL {level}')
         self.plog(f'Channel {channel} RF Level set to {level} dBm')
     
     def set_rf_lvl_offset(self, offs = 2, channel=1):
         self.write(f'SOUR{channel}:POW:OFFS {offs}')
         self.plog(f'Channel {channel} RF Level Offset set to {offs} dB')
+    
+    def get_rf_level(self, channel=1):
+        lvl = self.query(f'SOUR{channel}:POW:LEV:IMM:AMPL?')
+        return lvl
 
     def set_rf_state(self, state = 'ON', channel=1):
         self.write(f':OUTP{channel} {state}')
@@ -194,6 +198,8 @@ class SMWHandler(visa_connections.DeviceHandler):
         self.recall_5g_mod_file(floc, fname)
         self.conf_5g_ul_trigger(delay_val=trigDelay)
         self.sync_outp_ext_trig()
+        self.set_5g_mod_state('ON')
+        self.set_rf_state('ON')
     
 def main():
     try:

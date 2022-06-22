@@ -40,10 +40,10 @@ def main():
     powsens_usb_id = '0x0AAD::0x0137::102850'
     #### End Inputs ####
     PowSens = PowSensHandler(usb_id=powsens_usb_id, cust_name='PowSens')
-    # PowSens.initialize()
-    # time.sleep(5)
-    # PowSens.set_freq(3750e6)
-    # PowSens.prep_measurement()
+    PowSens.initialize()
+    time.sleep(5)
+    PowSens.set_freq(3750e6)
+    PowSens.prep_measurement()
     print(PowSens.get_power())
     PowSens.close()
 
