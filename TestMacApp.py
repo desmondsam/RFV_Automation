@@ -6,7 +6,7 @@ Created on Wed Mar  9 16:47:00 2022
 """
 import paramiko 
 import time
-from scp import SCPClient
+# from scp import SCPClient
 import re
 
 class TestMacSSH():
@@ -19,10 +19,10 @@ class TestMacSSH():
         print('Connection to SSH established.')
         self.cmd = self.client.invoke_shell()
     
-    def getFile(self, du_file, pc_file):
-        scp = SCPClient(self.client.get_transport())
-        scp.get(du_file, pc_file)
-        print('File moved from DU to PC')
+    # def getFile(self, du_file, pc_file):
+    #     scp = SCPClient(self.client.get_transport())
+    #     scp.get(du_file, pc_file)
+    #     print('File moved from DU to PC')
     
     def sshRead(self, buffer_size):
         while not self.cmd.recv_ready():
@@ -42,8 +42,11 @@ class TestMacSSH():
         self.sshWrite(f'cd {dir_path}')
         time.sleep(0.1)
 
-    def setEnv(self, env=r'set_env_var.sh'):    
-        self.sshWrite(f'source {env}')
+    def setEnv(self, env=r'set_env_var.sh', mod=None):
+        if(mod):
+            self.sshWrite(f'source {env} {mod}')
+        else:    
+            self.sshWrite(f'source {env}')
         time.sleep(4)
     
     def startL1(self, mod='xran'):
@@ -97,24 +100,25 @@ class TestMacSSH():
     def killL2(self):
         self.sshWrite("exit\n")
     
-    def startTerm1(self):
-        self.changeDir(r'/data/storage/l1_package/')  #directory in raw text
-        print("\n\nT1:",self.sshRead(100).decode('UTF-8'),"\n\n")
-        self.setEnv()  #input in raw text
-        print("\n\nT1:",self.sshRead(2000).decode('UTF-8'),"\n\n")
-        self.changeDir(r'/data/storage/l1_package/bin/nr5g/gnb/l1')  #directory in raw text
-        print("\n\nT1:",self.sshRead(100).decode('UTF-8'),"\n\n")
-        self.startL1()
-        print("\n\nT1:",self.sshRead(20).decode('UTF-8'),"\n\n")
+    def startTerm1(self, path, mod, envMod):
         
-    def startTerm2(self):
+        self.changeDir(path)  #directory in raw text
+        print("\n\nT1:",self.sshRead(224).decode('UTF-8'),"\n\n")
+        self.setEnv(mod=envMod)  #input in raw text
+        print("\n\nT1:",self.sshRead(2334).decode('UTF-8'),"\n\n")
+        self.changeDir(fr'{path}/bin/nr5g/gnb/l1')  #directory in raw text
+        print("\n\nT1:",self.sshRead(110).decode('UTF-8'),"\n\n")
+        self.startL1(mod=mod)
+        print("\n\nT1:",self.sshRead(40).decode('UTF-8'),"\n\n")
         
-        self.changeDir(r'/data/storage/l1_package/')  #directory in raw text
-        print("\n\nT2:",self.sshRead(100).decode('UTF-8'),"\n\n")
-        self.setEnv()  #input in raw text
-        print("\n\nT2:",self.sshRead(2000).decode('UTF-8'),"\n\n")
-        self.changeDir(r'/data/storage/l1_package/bin/nr5g/gnb/l1')  #directory in raw text
-        print("\n\nT2:",self.sshRead(100).decode('UTF-8'),"\n\n")
+    def startTerm2(self, path, envMod):
+        
+        self.changeDir(path)  #directory in raw text
+        print("\n\nT2:",self.sshRead(224).decode('UTF-8'),"\n\n")
+        self.setEnv(mod=envMod)  #input in raw text
+        print("\n\nT2:",self.sshRead(2334).decode('UTF-8'),"\n\n")
+        self.changeDir(fr'{path}/bin/nr5g/gnb/l1')  #directory in raw text
+        print("\n\nT2:",self.sshRead(110).decode('UTF-8'),"\n\n")
         self.startL1LogFile()
         print("\n\nT2:",self.sshRead(20).decode('UTF-8'),"\n\n")
         print("Waiting for PhyLayer prompt")
@@ -122,14 +126,14 @@ class TestMacSSH():
         print("\n\nT2:",self.sshRead(30000).decode('UTF-8'),"\n\n")
         self.killProcess()
         
-    def startTerm3(self, mode=4, timer=0, counter=0, testType = 1, numero=0, bw=20, testNum=1046): 
+    def startTerm3(self, path, envMod, mode=4, timer=0, counter=0, testType = 2, numero=1, bw=100, testNum=33604): 
           
-        self.changeDir(r'/data/storage/l1_package/')  #directory in raw text
-        print("\n\nT3:",self.sshRead(1000).decode('UTF-8'),"\n\n")
-        self.setEnv()  #input in raw text
-        print("\n\nT3:",self.sshRead(2000).decode('UTF-8'),"\n\n")
-        self.changeDir(r'/data/storage/l1_package/bin/nr5g/gnb/testmac')  #directory in raw text
-        print("\n\nT3:",self.sshRead(100).decode('UTF-8'),"\n\n")
+        self.changeDir(path)  #directory in raw text
+        print("\n\nT3:",self.sshRead(224).decode('UTF-8'),"\n\n")
+        self.setEnv(mod=envMod)  #input in raw text
+        print("\n\nT3:",self.sshRead(2334).decode('UTF-8'),"\n\n")
+        self.changeDir(fr'{path}/bin/nr5g/gnb/testmac')  #directory in raw text
+        print("\n\nT3:",self.sshRead(106).decode('UTF-8'),"\n\n")
         self.startL2()
         self.phyStart(mode, timer, counter)
         #print("\n\nT3:",T3.sshRead(68).decode('UTF-8'),"\n\n")
@@ -137,12 +141,13 @@ class TestMacSSH():
     
 def main():
     # pass
-    T1 = TestMacSSH(server = '10.69.91.51')
-    T2 = TestMacSSH(server = '10.69.91.51')
-    T3 = TestMacSSH(server = '10.69.91.51')
-    T1.startTerm1()
-    T2.startTerm2()
-    T3.startTerm3()
+    T1 = TestMacSSH(server = '10.69.91.71')
+    T2 = TestMacSSH(server = '10.69.91.71')
+    T3 = TestMacSSH(server = '10.69.91.71')
+    L1_Home_Dir = r'/home/Load411/l1_package'
+    T1.startTerm1(L1_Home_Dir, mod='xran_mMIMO', envMod='-d')
+    T2.startTerm2(L1_Home_Dir, envMod='-d')
+    T3.startTerm3(L1_Home_Dir, envMod='-d', testType=2, numero=1, bw=100, testNum=33604)
     T2.sshRead(11050)
     count=0
     while (count < 5):

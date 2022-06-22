@@ -12,19 +12,23 @@ DataSet = nt('DataSet', [
             'TX_Power',
             'TX_BW',
             'RX_Frequency',
-            'RX_Wanted_Sig_lvl_dBm',
+            'RX_Wanted_Sig_lvl',
             'RX_Sig_BW_MHz',
             'RX_Channel',
+            'Test_Mode',
+            'BLER',
+            'BLER_Limit',
+            'Spec_Min',
+            'Spec_Max',
+            'Meas_Result',
+            'Unit',
+            'Status',
             'Interferer_1_Lvl',
             'Interferer_1_Freq',
             'Interferer_1_Type',
             'Interferer_2_Lvl',
             'Interferer_2_Freq',
             'Interferer_2_Type',
-            'BLER_Spec_Max',
-            'Meas_Result',
-            'Unit',
-            'Status',
             'Temperature',
             'Test_Model',
             'Num_Of_Carriers',
@@ -41,7 +45,7 @@ DataSet = nt('DataSet', [
             ])
 # Specs = nt('Specs', ['spec_min', 'spec_max'])
 
-def generate_dataset(loop,pipe,testName,measName,tx_freq,tx_pwr,tx_bw,rx_freq,rx_ws_lvl,rx_bw,rx_channel,bler_spec_max,res,unit,status=None,is_1_lvl=None,is_1_freq=None,is_1_type=None,is_2_Lvl=None,is_2_freq=None,is_2_type=None,temp=None,tm=None,noc=None,sig_file_name=None,rx0_rssi=None,rx1_rssi=None,rx0_snr_avg=None,rx0_snr_min=None,rx0_snr_max=None,rx0_ta_avg=None,rx0_ta_min=None,rx0_ta_max=None,tc_num=None):
+def generate_dataset(loop,pipe,testName,measName,tx_freq,tx_pwr,tx_bw,rx_freq,rx_ws_lvl,rx_bw,rx_channel,test_mode,bler,bler_limit,spec_min,spec_max,res,unit,status=None,is_1_lvl=None,is_1_freq=None,is_1_type=None,is_2_Lvl=None,is_2_freq=None,is_2_type=None,temp=None,tm=None,noc=None,sig_file_name=None,rx0_rssi=None,rx1_rssi=None,rx0_snr_avg=None,rx0_snr_min=None,rx0_snr_max=None,rx0_ta_avg=None,rx0_ta_min=None,rx0_ta_max=None,tc_num=None):
     return DataSet(
         Date = General_Utils.curr_date_mdy(),
         Time = General_Utils.curr_time_ampm(),
@@ -53,19 +57,23 @@ def generate_dataset(loop,pipe,testName,measName,tx_freq,tx_pwr,tx_bw,rx_freq,rx
         TX_Power=tx_pwr,
         TX_BW=tx_bw,
         RX_Frequency=rx_freq,
-        RX_Wanted_Sig_lvl_dBm=rx_ws_lvl,
+        RX_Wanted_Sig_lvl=rx_ws_lvl,
         RX_Sig_BW_MHz=rx_bw,
         RX_Channel=rx_channel,
+        Test_Mode=test_mode,
+        BLER=bler,
+        BLER_Limit=bler_limit,
+        Spec_Min=spec_min,
+        Spec_Max=spec_max,
+        Meas_Result=res,
+        Unit=unit,
+        Status=status,
         Interferer_1_Lvl=is_1_lvl,
         Interferer_1_Freq=is_1_freq,
         Interferer_1_Type=is_1_type,
         Interferer_2_Lvl=is_2_Lvl,
         Interferer_2_Freq=is_2_freq,
         Interferer_2_Type=is_2_type,
-        BLER_Spec_Max=bler_spec_max,
-        Meas_Result=res,
-        Unit=unit,
-        Status=status,
         Temperature=temp,
         Test_Model=tm,
         Num_Of_Carriers=noc,
@@ -81,21 +89,29 @@ def generate_dataset(loop,pipe,testName,measName,tx_freq,tx_pwr,tx_bw,rx_freq,rx
         Test_Case_38_141=tc_num,
     )
 
+def validate_data(meas_res, spec_min, spec_max):
+    if(spec_min != None and meas_res < spec_min): return 'FAIL'
+    if(spec_max != None and meas_res > spec_max): return 'FAIL'
+    return 'PASS'
+
 if __name__ == '__main__':
-    res = generate_dataset(
-        loop=1,
-        pipe=1,
-        testName='Sensitivity',
-        measName='BLER',
-        tx_freq=3840,
-        tx_pwr=37,
-        tx_bw=100,
-        rx_freq=3840,
-        rx_ws_lvl=-77,
-        rx_bw=100,
-        rx_channel='Middle',
-        bler_spec_max=5,
-        res=0.35,
-        unit='%',
-    )
-    General_Utils.namTupList_to_spreadsheet([res], 'testRx', r'D:\Zulu_RFV\Test_Sequence_Data')
+    # res = generate_dataset(
+    #     loop=1,
+    #     pipe=1,
+    #     testName='Sensitivity',
+    #     measName='BLER',
+    #     tx_freq=3840,
+    #     tx_pwr=37,
+    #     tx_bw=100,
+    #     rx_freq=3840,
+    #     rx_ws_lvl=-77,
+    #     rx_bw=100,
+    #     rx_channel='Middle',
+    #     bler=0.43,
+    #     spec_min=None,
+    #     spec_max=5,
+    #     res=0.35,
+    #     unit='%',
+    # )
+    # General_Utils.namTupList_to_spreadsheet([res], 'testRx', r'C:\Zulu\Test_Sequence_Data')
+    print(validate_data(6.5, None, 5))
