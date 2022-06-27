@@ -45,8 +45,7 @@ with col2:
     e62 = st.empty()
     e72 = st.empty()
 
-full_pg_header = st.empty()
-full_page = st.empty()
+full_page = st.container()
 info_bar = st.empty()
 stat_bar = st.empty()
 
@@ -130,6 +129,14 @@ elif(device == 'Switch'):
         att = sw_att_form.slider(label='Master Switch Attenuation', min_value=10, max_value=70, value=20, step=10)
         att_changed = sw_att_form.form_submit_button('Set Attenuation')
 
+        if(e32.button('Preset Switch(es)')):
+            stat_bar.info('Switch(es) Presetting. Please wait.')
+            mswitch.initialize()
+            if(sswitch and sswitch.device):
+                sswitch.initialize()
+            time.sleep(15)
+            stat_bar.success('Switche(s) Preset')
+
         if switched:
             if(switch_dir == 'To Analyzer'):
                 mswitch.set_out_to_san()
@@ -139,11 +146,11 @@ elif(device == 'Switch'):
             if(ant < 33):
                 mswitch.switch_ant(ant)
             else:
-                if(sswitch and sswitch.device):
-                    sswitch.slave_switch_ant(ant, master_switch_ip=st.session_state.m_switch_ip, rf_source=from_gen)
+                sswitch.slave_switch_ant(ant, master_switch_ip=st.session_state.m_switch_ip, rf_source=from_gen)
             stat_bar.success(f'Switched to Port {ant} directing {switch_dir}')
         
         if att_changed:
+            mswitch.set_atten_val(att_name='ATT33', att_val=0)
             mswitch.set_atten_val(att_name='ATT36', att_val=att)
             stat_bar.success(f'Master Switch Attenuation Set to {att} dB')
         
@@ -154,7 +161,7 @@ elif(device == 'Switch'):
         stat_bar.error('Cannot communicate with Master Switch IP. Please update IP')
 
 elif(device == 'Analyzer'):
-    full_pg_header.header('Spectrum Analyzer')
+    full_page.header('Spectrum Analyzer')
     ip_val = st.session_state.fsv_ip
     try:
         fsv = FSVHandler(tcp_ip=ip_val)
@@ -178,6 +185,10 @@ elif(device == 'Analyzer'):
                 fsv.ref_lvl_offset(abs(ref_lvl_offs))
                 info_bar.info(f'Reference Level Offset set to {ref_lvl_offs} dB')
             stat_bar.success(f'Center Frequency Set to {freq_val} MHz')
+        if(full_page.button('Preset Analyzer')):
+            stat_bar.info('Analyzer Presetting. Please wait.')
+            fsv.initialize()
+            time.sleep(20)
         fsv.close()
     else:
         stat_bar.error('Cannot communicate with Analyzer IP. Please update IP')

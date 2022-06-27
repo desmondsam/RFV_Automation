@@ -11,6 +11,10 @@ class SMWHandler(visa_connections.DeviceHandler):
         self.plog(f'Channel {channel} Frequency set to {freq} MHz')
         time.sleep(2)
     
+    def get_frequency(self, channel=1):
+        freq = self.query_ascii_values(f'SOUR{channel}:FREQ?')[0]
+        return round((freq/1e6),4)
+
     def set_rf_level(self, level = -10, channel=1):
         self.write(f'SOUR{channel}:POW:LEV:IMM:AMPL {level}')
         self.plog(f'Channel {channel} RF Level set to {level} dBm')
@@ -147,7 +151,7 @@ class SMWHandler(visa_connections.DeviceHandler):
         self.write(':SOUR:BB:NR5G:TCW:APPL')
         self.plog('Applied Test Case Wizard Settings')
     
-    def general_tcw_setup(self, testCase, freq, bw, scs, cid, rb_offs, trigSrc, trigDelUnit, trigDelVal, freq_alloc=None, is_ueid=0, is_clid=0, fr_shift_m=None, is_rf_freq=None, treq='BLPE'):
+    def general_tcw_setup(self, testCase, freq, bw=100, scs=30, cid=0, rb_offs=0, trigSrc='EGT1', trigDelUnit='TIME', trigDelVal='0us', freq_alloc=None, is_ueid=0, is_clid=0, fr_shift_m=None, is_rf_freq=None, treq='BLPE'):
         self.set_5g_link_direction(link_direction = 'UP')
         self.conf_5g_ul_381411_tcWizard(testCase=testCase)
         self.conf_5g_ul_wantedSig(freq=freq, bw=bw, scs=scs, cell_id=cid, rb_offs=rb_offs)
@@ -163,7 +167,7 @@ class SMWHandler(visa_connections.DeviceHandler):
         self.general_tcw_setup(testCase='TC72', freq=freq, bw=bw, scs=scs, cid=cid, rb_offs=rb_offs, trigSrc=trigSrc, trigDelUnit=trigDelUnit, trigDelVal=trigDelVal)
         self.set_rf_state()
     
-    def setup_ACSelectivity(self, freq, bw, scs, cid, rb_offs, trigSrc, trigDelUnit, trigDelVal, freq_alloc, is_ueid=0, is_clid=0):
+    def setup_ACSelectivity(self, freq, bw=100, scs=30, cid=0, rb_offs=0, trigSrc='EGT1', trigDelUnit='TIME', trigDelVal='0us', freq_alloc='HIGH', is_ueid=0, is_clid=0):
         self.plog('Configuring for Adjacent Channel Selectivity Measurement')
         self.general_tcw_setup(testCase='TC741', freq=freq, bw=bw, scs=scs, cid=cid, rb_offs=rb_offs, trigSrc=trigSrc, trigDelUnit=trigDelUnit, trigDelVal=trigDelVal, freq_alloc=freq_alloc, is_ueid=is_ueid, is_clid=is_clid)
         self.set_rf_state()
@@ -241,7 +245,7 @@ def main():
         # smw.user_connector_output_signal(connector=3, signal='MARKA', marker=1)
         # smw.set_5g_trig_output_mode(output_mode = 'FRAM')
         # smw.set_frequency(freq=3650)
-        smw.set_rf_lvl_offset(-2)
+        # smw.set_rf_lvl_offset(-2)
         # smw.set_rf_level(level = -20)
         # smw.set_rf_state()
         # smw.set_5g_mod_state()
@@ -250,6 +254,8 @@ def main():
         # smw.set_5g_mod_state('OFF')
         # smw.set_link_direction()
         # smw.load_5g_dl_test_model('NR-FR1-TM1_1__FDD_100MHz_30kHz')
+        # smw.setup_ACSelectivity(freq=3840, trigDelVal='9.9875ms')
+        print(smw.get_frequency(2))
         smw.close()
     except Exception as e:
         print(e)

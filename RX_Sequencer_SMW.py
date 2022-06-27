@@ -15,7 +15,7 @@ from RS_SMW_SigGen import SMWHandler
 import Mini_Circuit_SM
 
 class RXTestSequencer():
-    def __init__(self, du_ip, sig_gen_ip, ztm4sp8t_ip, ztm8_ip, loops, xl_floc, xl_fname, cal_files_loc, wantSig_cal_fname, test_info):
+    def __init__(self, du_ip, sig_gen_ip, ztm4sp8t_ip, ztm8_ip, loops, xl_floc, xl_fname, cal_files_loc, wantSig_cal_fname, interSig_cal_fname, test_info):
         self.sig_gen = SMWHandler(sig_gen_ip, cust_name = 'SigGen')
         self.ztm4sp8t_ip = ztm4sp8t_ip
         self.ztm8_ip = ztm8_ip
@@ -27,7 +27,7 @@ class RXTestSequencer():
         # self.pwr_up_time = pwr_up_time
         self.cal_file_loc = cal_files_loc
         self.ws_cal_file = wantSig_cal_fname
-        # self.is_cal_file = interSig_cal_fname
+        self.is_cal_file = interSig_cal_fname
         self.loops = loops
         self.xl_floc = xl_floc
         self.xl_fname = xl_fname
@@ -87,6 +87,24 @@ class RXTestSequencer():
         # print(f'Search Complete | RF Level {rf_lvl}, BLER = {sensDict[rf_lvl]}')
         return [rf_lvl, sensDict[rf_lvl]]
     
+    def meas_acs(self, freq, bw, ws_path_loss, is_path_loss, wavFloc, wavFname, tDelay, ws_rf_lvl):
+        self.sig_gen.setup_ACSelectivity(freq=freq, bw=bw, trigDelVal=tDelay)
+        self.sig_gen.recall_5g_mod_file(wavFloc, wavFname)
+        self.sig_gen.set_rf_lvl_offset(ws_path_loss)
+        self.sig_gen.set_rf_lvl_offset(is_path_loss, channel=2)
+        self.sig_gen.set_rf_level(ws_rf_lvl)
+        self.sig_gen.set_rf_level(-52, channel=2)
+        pos_is_bler = self.T2.blerQuery()
+        pos_is_freq = self.sig_gen.get_frequency(channel=2)
+        self.sig_gen.set_5g_mod_state('OFF', channel=1)
+        self.sig_gen.set_5g_mod_state('OFF', channel=2)
+        self.sig_gen.conf_5g_ul_interfererSig(freq_alloc='LOW')
+        self.sig_gen.apply_testCaseWiz_settings()
+        time.sleep(20)
+        neg_is_bler = self.T2.blerQuery() 
+        neg_is_freq = self.sig_gen.get_frequency(channel=2)
+        return[[pos_is_bler, pos_is_freq], [neg_is_bler, neg_is_freq]]
+
     def psup_on_seq(self):
         self.ru_pwr_supply.set_curr()
         self.ru_pwr_supply.set_volt(self.supp_volt)
@@ -100,13 +118,12 @@ class RXTestSequencer():
         time.sleep(1)
         print(self.ru_pwr_supply.str_data())
 
-    def run_sequences(self,sequences,pipes,freqs,temps,phyMode,phyTimer,phyCounter,tcType,tcNumero,bw,tcNum,l1_home_dir,xranMod,envMod,tDelay,wavFloc,wavFname,sens_start_lvl,init_instruments):
+    def run_sequences(self,sequences,pipes,freqs,temps,phyMode,phyTimer,phyCounter,tcType,tcNumero,bw,tcNum,l1_home_dir,xranMod,envMod,tDelay,wavFloc,wavFname,sens_start_lvl,ws_rf_lvl,init_instruments):
         results = []
         if(init_instruments):
             self.initialize_instruments()
         try:
             self.config_DU_terminals(mode=phyMode, timer=phyTimer, counter=phyCounter, testType=tcType, numero=tcNumero, bw=bw, testNum=tcNum, l1_home_dir=l1_home_dir, xranMod=xranMod, envMod=envMod)
-            self.sig_gen.manual_setup_ultest(floc=wavFloc, fname=wavFname, trigDelay=tDelay)
             for temp in temps:
                 print(f'Not Programmed: Set Chamber to {temp}C')
                 for loop in range(1, self.loops+1):
@@ -115,13 +132,25 @@ class RXTestSequencer():
                         print(f'Testing: Switch to Pipe {pipe} and Set Path Loss in Sig Gen')
                         Mini_Circuit_SM.MN_Switch(f'Pipe{pipe-1}', self.ztm4sp8t_ip, self.ztm8_ip)
                         for freq in freqs:
-                            self.sig_gen.set_frequency(freq=freq)
                             ws_path_loss = Fetch_Path_Loss.fetch_loss(pipe, freq, self.cal_file_loc, self.ws_cal_file)
-                            self.sig_gen.set_rf_lvl_offset(offs=ws_path_loss, channel=1)
+                            is_path_loss = Fetch_Path_Loss.fetch_loss(pipe, freq, self.cal_file_loc, self.is_cal_file)
                             if(sequences['Sensitivity']):
+                                self.sig_gen.manual_setup_ultest(floc=wavFloc, fname=wavFname, trigDelay=tDelay)
+                                self.sig_gen.set_frequency(freq=freq)   
+                                self.sig_gen.set_rf_lvl_offset(offs=ws_path_loss, channel=1)
                                 sens_res = self.meas_sensitivity(rf_lvl=sens_start_lvl)
                                 status = VC_Datasets_RX.validate_data(meas_res=sens_res[0], spec_min=None, spec_max=-90)
-                                results.append(VC_Datasets_RX.generate_dataset(loop=loop, pipe=pipe, testName='Sensitivity', measName='Static_Sensitivity', tx_freq=None, tx_pwr=None, tx_bw=100, rx_freq=freq, rx_ws_lvl=sens_res[0], rx_bw=100, rx_channel='Middle', test_mode='3GPP', bler=sens_res[1], spec_min=None, spec_max=-90, res=sens_res[0], unit='dBm', status=status, res_col='BLER'))
+                                results.append(VC_Datasets_RX.generate_dataset(loop=loop, pipe=pipe, testName='Sensitivity', measName='Static_Sensitivity', tx_freq=None, tx_pwr=None, tx_bw=bw, rx_freq=freq, rx_ws_lvl=sens_res[0], rx_bw=bw, rx_channel='Middle', test_mode='3GPP', bler=sens_res[1], spec_min=None, spec_max=-90, res=sens_res[0], unit='dBm', status=status, res_col='Wanted Sig Lvl'))
+                            if(sequences['ACS']):
+                                acs_res = self.meas_acs(freq, bw, ws_path_loss, is_path_loss, wavFloc, wavFname, tDelay, ws_rf_lvl)
+                                for i in [0, 1]:
+                                    if(i==0):
+                                        mname = 'ACS - Positive Interferer'
+                                    else:
+                                        mname = 'ACS - Negative Interferer'
+                                    res = acs_res[i][0]
+                                    status = VC_Datasets_RX.validate_data(res, None, 5)
+                                    results.append(VC_Datasets_RX.generate_dataset(loop=loop,pipe=pipe,testName='ACS',measName=mname,tx_freq=None,tx_pwr=None,tx_bw=bw,rx_freq=freq,rx_ws_lvl=ws_rf_lvl,rx_bw=bw,rx_channel='Middle',test_mode='3GPP',bler=res,spec_min=None,spec_max=5,res=res,unit='%',status=status,res_col='BLER',is_1_lvl=-52,is_1_freq=acs_res[i][1]))
         except KeyboardInterrupt:
             print('Manual Interrupt')
         except Exception as e:
@@ -155,6 +184,7 @@ def main():
     xranMod='xran_mMIMO'
     envMod='-d'
     sens_start_lvl = -69
+    ws_rf_lvl = -68
     tDelay = '9.9875ms'
     wavFloc = r'/var/user/chris' #r'C:\VXG Files'
     wavFname = '33604_qpsk_zulu'        #'1046-waveform.wfm'
@@ -165,7 +195,8 @@ def main():
     sequences = {
         'RU_ON' : False,
         'RX_ON' : False,
-        'Sensitivity' : True,
+        'Sensitivity' : False,
+        'ACS' : True,
         'RX_OFF' : False,
         'RU_OFF' : False,
     }
@@ -191,6 +222,7 @@ def main():
         xl_fname = xl_fname,
         cal_files_loc = cal_files_loc,
         wantSig_cal_fname = ws_cal_fname,
+        interSig_cal_fname = is_cal_fname,
         test_info=test_info,
         )
       
@@ -214,6 +246,7 @@ def main():
         wavFloc,
         wavFname,
         sens_start_lvl,
+        ws_rf_lvl,
         init_instruments
         )
     

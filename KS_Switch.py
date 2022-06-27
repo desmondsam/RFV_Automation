@@ -109,7 +109,7 @@ if __name__ == '__main__':
         ### Inputs ###
         switch_ip = '192.168.255.204'
         slave_switch_ip = '192.168.255.206'
-        ant = 3
+        ant = 1
         from_sig_gen = False
         ### End Inputs ###
         switch = KSSwitchHandler(tcp_ip=switch_ip, cust_name='KS_Switch')
