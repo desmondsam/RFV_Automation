@@ -2,6 +2,7 @@ import streamlit as st
 from Pwr_Supply import PwrSupplyHandler
 from KS_Switch import KSSwitchHandler
 from RS_FSV_SigAnalyzer import FSVHandler
+from RS_PowerSensor import PowSensHandler
 import Fetch_Path_Loss
 import time
 from PIL import Image
@@ -19,13 +20,14 @@ with st.sidebar:
     if(image):
         st.image(image)
     st.header('Devices')
-    device = st.radio('Pick a Device', ['Power Supply', 'Switch', 'Analyzer'], help='KS Power Supply (N5767),  KS Switch  (or)  R&S FSV')
+    device = st.radio('Pick a Device', ['Power Supply', 'Switch', 'Analyzer', 'Power Sensor'], help='KS Power Supply (N5767),  KS Switch, R&S FSV (or) R&S Sensor')
     supp_stat = st.empty()
     ip_exp = st.expander('Update Device IP')
     ip_exp.text_input(label='Power Supply IP', value='192.168.255.207', key='pwr_supp_ip')
     ip_exp.text_input(label='Master Switch IP', value='192.168.255.204', key='m_switch_ip')
     ip_exp.text_input(label='Slave Switch IP', value='192.168.255.206', key='s_switch_ip')
     ip_exp.text_input(label='Signal Analyzer IP', value='192.168.255.202', key='fsv_ip')
+    ip_exp.text_input(label='Power Sensor ID', value='0x0AAD::0x0137::102850', key='pwr_sens_id')
 
 with col1:
     e11 = st.empty()
@@ -45,7 +47,6 @@ with col2:
     e62 = st.empty()
     e72 = st.empty()
 
-full_page = st.container()
 info_bar = st.empty()
 stat_bar = st.empty()
 
@@ -161,6 +162,7 @@ elif(device == 'Switch'):
         stat_bar.error('Cannot communicate with Master Switch IP. Please update IP')
 
 elif(device == 'Analyzer'):
+    full_page = st.container()
     full_page.header('Spectrum Analyzer')
     ip_val = st.session_state.fsv_ip
     try:
@@ -192,3 +194,29 @@ elif(device == 'Analyzer'):
         fsv.close()
     else:
         stat_bar.error('Cannot communicate with Analyzer IP. Please update IP')
+
+elif(device == 'Power Sensor'):
+    full_page = st.container()
+    full_page.header('R&S Power Sensor')
+    id_val = st.session_state.pwr_sens_id
+    try:
+        pow_sens = PowSensHandler(usb_id=id_val)
+    except VisaIOError:
+        stat_bar.error('Cannot communicate with Analyzer IP. Please update IP')
+        pow_sens = None
+    if(pow_sens and pow_sens.device):
+        full_page.write('**Initialize and Configure the Sensor**')
+        if(full_page.button('Initialize')):
+            pow_sens.initialize()
+            time.sleep(5)
+            pow_sens.prep_measurement()
+        full_page.write('**Read Power Sensor**')
+        pow_sens_form = full_page.form('Sensor')
+        freq_val = pow_sens_form.number_input('Frequency(MHz)', value=3840)
+        get_power = pow_sens_form.form_submit_button('Get Power')
+        if(get_power):
+            pow_sens.set_freq(freq_val*1e6)
+            full_page.info(pow_sens.get_power())
+        pow_sens.close()
+    else:
+        full_page.error('Cannot communicate with Sensor ID. Please update ID')
