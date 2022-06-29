@@ -171,14 +171,18 @@ elif(device == 'Analyzer'):
         stat_bar.error('Cannot communicate with Analyzer IP. Please update IP')
         fsv = None
     if(fsv and fsv.device):
+        if(full_page.button('Preset Analyzer')):
+            stat_bar.info('Analyzer Presetting. Please wait.')
+            fsv.initialize()
+            time.sleep(20)
         freq_form = full_page.form('Sanalyzer_Freq')
         ff_c1, ff_c2 = freq_form.columns(2)
-        freq_val = ff_c1.number_input('Frequency(MHz)', value=3840)
-        ant = ff_c1.selectbox('Antenna', range(1,65))
+        freq_val = ff_c1.number_input('Frequency(MHz)', min_value=1000, max_value=5000, value=3840, step=10, help='Set frequency in between 1000 MHz and 5000 MHz')
+        ant = ff_c1.selectbox('Antenna', range(1,65), help='Select the antenna/path to set the loss value for')
 
-        loss_file_loc = ff_c2.text_input('Loss File Location', r'D:\MidasRFV\Calibration_and_Spurious_Files')
-        loss_file_name = ff_c2.text_input('Loss File Name', r'Bench_42_DD_TX_Inband_Losses_SwAtt_20dB')
-        upd_path_loss = ff_c2.checkbox('Update Path Loss')
+        loss_file_loc = ff_c2.text_input('Loss File Location', r'D:\MidasRFV\Calibration_and_Spurious_Files', help='PC location of your calibration/path loss spreadsheet')
+        loss_file_name = ff_c2.text_input('Loss File Name', r'Bench_42_DD_TX_Inband_Losses_SwAtt_20dB', help='File name of your calibration/path loss spreadsheet')
+        upd_path_loss = ff_c2.checkbox('Update Path Loss', help='Check if you want the path loss from your loss file to be set on the analyzer')
         if ff_c1.form_submit_button('Set Frequency/Path Loss'):
             fsv.set_center_freq(freq_val)
             if(upd_path_loss):
@@ -187,10 +191,6 @@ elif(device == 'Analyzer'):
                 fsv.ref_lvl_offset(abs(ref_lvl_offs))
                 info_bar.info(f'Reference Level Offset set to {ref_lvl_offs} dB')
             stat_bar.success(f'Center Frequency Set to {freq_val} MHz')
-        if(full_page.button('Preset Analyzer')):
-            stat_bar.info('Analyzer Presetting. Please wait.')
-            fsv.initialize()
-            time.sleep(20)
         fsv.close()
     else:
         stat_bar.error('Cannot communicate with Analyzer IP. Please update IP')
@@ -206,17 +206,17 @@ elif(device == 'Power Sensor'):
         pow_sens = None
     if(pow_sens and pow_sens.device):
         full_page.write('**Initialize and Configure the Sensor**')
-        if(full_page.button('Initialize')):
+        if(full_page.button('Initialize', help='Preset Sensor and Configure it to output average power in dBm')):
             pow_sens.initialize()
             time.sleep(5)
             pow_sens.prep_measurement()
         full_page.write('**Read Power Sensor**')
         pow_sens_form = full_page.form('Sensor')
-        freq_val = pow_sens_form.number_input('Frequency(MHz)', value=3840)
+        freq_val = pow_sens_form.number_input('Frequency(MHz)', min_value=1000, max_value=5000, value=3840, step=10, help='Set frequency in between 1000 MHz and 5000 MHz')
         get_power = pow_sens_form.form_submit_button('Get Power')
         if(get_power):
             pow_sens.set_freq(freq_val*1e6)
-            full_page.info(pow_sens.get_power())
+            full_page.info(f'Power: {pow_sens.get_power()} dBm')
         pow_sens.close()
     else:
         full_page.error('Cannot communicate with Sensor ID. Please update ID')
