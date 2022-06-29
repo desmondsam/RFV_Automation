@@ -9,7 +9,6 @@ from PIL import Image
 from pyvisa.errors import VisaIOError
 
 st.title('Test Bench Control')
-col1, col2 = st.columns(2)
 
 with st.sidebar:
     image = None
@@ -29,29 +28,12 @@ with st.sidebar:
     ip_exp.text_input(label='Signal Analyzer IP', value='192.168.255.202', key='fsv_ip')
     ip_exp.text_input(label='Power Sensor ID', value='0x0AAD::0x0137::102850', key='pwr_sens_id')
 
-with col1:
-    e11 = st.empty()
-    e21 = st.empty()
-    e31 = st.empty()
-    e41 = st.empty()
-    e51 = st.empty()
-    e61 = st.empty()
-    e71 = st.empty()
-
-with col2:
-    e12 = st.empty()
-    e22 = st.empty()
-    e32 = st.empty()
-    e42 = st.empty()
-    e52 = st.empty()
-    e62 = st.empty()
-    e72 = st.empty()
-
-info_bar = st.empty()
-stat_bar = st.empty()
-
 if(device == 'Power Supply'):
-    e11.header('Power Supply')
+    full_page = st.container()
+    info_bar = st.empty()
+    stat_bar = st.empty()
+    ff_c1, ff_c2 = full_page.columns(2)
+    ff_c1.header('Power Supply')
     ip_val = st.session_state.pwr_supp_ip
     try:
         usupp = PwrSupplyHandler(ip_val)
@@ -63,27 +45,27 @@ if(device == 'Power Supply'):
             supp_state = usupp.query('OUTP?')
             st.session_state['ps_state'] = supp_state
 
-        e12.header('DC Settings')
+        ff_c2.header('DC Settings')
 
-        pwr_sett_form = e22.form('DC Settings')
+        pwr_sett_form = ff_c2.form('DC Settings')
         volt_lmt = pwr_sett_form.slider(label='Voltage Limit', max_value=60, value=48, step=1)
         curr_lmt = pwr_sett_form.slider(label='Current Limit', max_value=26.0, value=26.0, step=0.25)
         set_limits = pwr_sett_form.form_submit_button('Set DC Limits')
 
-        e21.write('**Turn Power Supply ON**')
-        if e31.button('PS ON'):
+        ff_c1.write('**Turn Power Supply ON**')
+        if ff_c1.button('PS ON'):
             usupp.turn_on()
             stat_bar.success('Power Supply Turned On')
             st.session_state['ps_state'] = True
 
-        e41.write('**Turn Power Supply OFF**')
-        if e51.button('PS OFF'):
+        ff_c1.write('**Turn Power Supply OFF**')
+        if ff_c1.button('PS OFF'):
             usupp.turn_off()
             stat_bar.success('Power Supply Turned Off')
             st.session_state['ps_state'] = False
 
-        e61.write('**Get Power Supply Data**')
-        if e71.button('Get PS Data'):
+        ff_c1.write('**Get Power Supply Data**')
+        if ff_c1.button('Get PS Data'):
             info_bar.info(usupp.str_data())
             stat_bar.success(f'Fetched Power Supply Data')
         
@@ -101,7 +83,10 @@ if(device == 'Power Supply'):
         stat_bar.error('Cannot communicate with current IP. Please update IP')
 
 elif(device == 'Switch'):
-    e11.header('Switch')
+    full_page = st.container()
+    stat_bar = st.empty()
+    ff_c1, ff_c2 = full_page.columns(2)
+    ff_c1.header('Switch')
     try:
         mswitch = KSSwitchHandler(tcp_ip=st.session_state.m_switch_ip)
         try:
@@ -114,7 +99,7 @@ elif(device == 'Switch'):
         mswitch = None
     
     if(mswitch and mswitch.device):
-        sw_form = e21.form('Switch_Form')
+        sw_form = ff_c1.form('Switch_Form')
         if(sswitch and sswitch.device):
             num_of_ant = 64
         else:
@@ -125,12 +110,12 @@ elif(device == 'Switch'):
         from_gen = False
         switched = sw_form.form_submit_button('Switch Port')
 
-        e12.header('Internal Attenuation')
-        sw_att_form = e22.form('Switch_Att_Form')
+        ff_c2.header('Internal Attenuation')
+        sw_att_form = ff_c2.form('Switch_Att_Form')
         att = sw_att_form.slider(label='Master Switch Attenuation', min_value=10, max_value=70, value=20, step=10)
         att_changed = sw_att_form.form_submit_button('Set Attenuation')
 
-        if(e32.button('Preset Switch(es)')):
+        if(ff_c2.button('Preset Switch(es)')):
             stat_bar.info('Switch(es) Presetting. Please wait.')
             mswitch.initialize()
             if(sswitch and sswitch.device):
