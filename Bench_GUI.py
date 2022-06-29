@@ -163,6 +163,7 @@ elif(device == 'Switch'):
 
 elif(device == 'Analyzer'):
     full_page = st.container()
+    stat_bar = st.empty()
     full_page.header('Spectrum Analyzer')
     ip_val = st.session_state.fsv_ip
     try:
@@ -189,7 +190,7 @@ elif(device == 'Analyzer'):
                 ref_lvl_offs = Fetch_Path_Loss.fetch_loss(ant, freq_val, file_loc=loss_file_loc, fname=loss_file_name)
                 time.sleep(5)
                 fsv.ref_lvl_offset(abs(ref_lvl_offs))
-                info_bar.info(f'Reference Level Offset set to {ref_lvl_offs} dB')
+                stat_bar.info(f'Reference Level Offset set to {ref_lvl_offs} dB')
             stat_bar.success(f'Center Frequency Set to {freq_val} MHz')
         fsv.close()
     else:
@@ -197,12 +198,13 @@ elif(device == 'Analyzer'):
 
 elif(device == 'Power Sensor'):
     full_page = st.container()
+    stat_bar = st.empty()
     full_page.header('R&S Power Sensor')
     id_val = st.session_state.pwr_sens_id
     try:
         pow_sens = PowSensHandler(usb_id=id_val)
     except VisaIOError:
-        stat_bar.error('Cannot communicate with Analyzer IP. Please update IP')
+        stat_bar.error('Cannot communicate with Sensor ID. Please update ID')
         pow_sens = None
     if(pow_sens and pow_sens.device):
         full_page.write('**Initialize and Configure the Sensor**')
@@ -216,7 +218,7 @@ elif(device == 'Power Sensor'):
         get_power = pow_sens_form.form_submit_button('Get Power')
         if(get_power):
             pow_sens.set_freq(freq_val*1e6)
-            full_page.info(f'Power: {pow_sens.get_power()} dBm')
+            stat_bar.info(f'Power: {pow_sens.get_power()} dBm')
         pow_sens.close()
     else:
-        full_page.error('Cannot communicate with Sensor ID. Please update ID')
+        stat_bar.error('Cannot communicate with Sensor ID. Please update ID')
