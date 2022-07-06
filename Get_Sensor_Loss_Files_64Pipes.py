@@ -24,8 +24,8 @@ class LossFileGetter():
         self.rf_level = rf_level
         self.sig_gen_channels = sig_gen_channels
         self.DataSet = nt('DataSet', [
-            'Pipe', 
-            'Frequency',
+            'Antenna', 
+            'Freq',
             'Loss',
         ])
     
@@ -65,9 +65,9 @@ class LossFileGetter():
                     self.sigGen.set_rf_state(state='ON', channel=channel)
                     power = self.powSens.get_power()
                     if(channel == 1):
-                        results_wanted.append(self.DataSet(Pipe = pipe, Frequency=freq, Loss=power))
+                        results_wanted.append(self.DataSet(Antenna = pipe, Freq=freq, Loss=power))
                     else:
-                        results_interferer.append(self.DataSet(Pipe = pipe, Frequency=freq, Loss=power))
+                        results_interferer.append(self.DataSet(Antenna = pipe, Freq=freq, Loss=power))
                     self.sigGen.set_rf_state(state='OFF', channel=channel)
         wanted_fname = f'Bench_{bench_id}_Losses_{self.sigGen.device_cust_name}_WantedSignal'
         inerferer_fname = f'Bench_{bench_id}_Losses_{self.sigGen.device_cust_name}_Interferer'
@@ -85,8 +85,8 @@ class LossFileGetter():
 
 def main():
     ### Inputs ###
-    sig_gen = 'VXG' #VXG or SMW
-    sig_gen_ip = '192.168.255.205' #Coupled with sig_gen. Use the right IP of the instrument
+    sig_gen = 'SMW' #VXG or SMW
+    sig_gen_ip = '192.168.255.201' #Coupled with sig_gen. Use the right IP of the instrument
     powSens_id = '0x0AAD::0x0137::102850' #USB ID Phrase
     master_switch_ip = '192.168.255.204'
     slave_switch_ip = '192.168.255.206'
@@ -95,7 +95,7 @@ def main():
     rf_lvl = 0
     sig_gen_channels = [1]
     output_loc = r'D:\MidasRFV\Calibration_and_Spurious_Files' #Calibration File Save Location
-    bench_id = '42_DD_RX_Zulu_BMT' #Test Bench Identifier with Calibration Tags
+    bench_id = '41_DD_RX_Zulu_BMT_Test' #Test Bench Identifier with Calibration Tags
     ### End Inputs ###
     try:
         loss_files_getter = LossFileGetter(

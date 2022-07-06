@@ -94,15 +94,25 @@ class RXTestSequencer():
         self.sig_gen.set_rf_lvl_offset(is_path_loss, channel=2)
         self.sig_gen.set_rf_level(ws_rf_lvl)
         self.sig_gen.set_rf_level(-52, channel=2)
+        time.sleep(20)
         pos_is_bler = self.T2.blerQuery()
         pos_is_freq = self.sig_gen.get_frequency(channel=2)
+        print(f'Positive Interferer Freq {pos_is_freq}MHz | BLER {pos_is_bler}%')
         self.sig_gen.set_5g_mod_state('OFF', channel=1)
         self.sig_gen.set_5g_mod_state('OFF', channel=2)
-        self.sig_gen.conf_5g_ul_interfererSig(freq_alloc='LOW')
-        self.sig_gen.apply_testCaseWiz_settings()
+        self.sig_gen.setup_ACSelectivity(freq=freq, bw=bw, trigDelVal=tDelay, freq_alloc='LOW')
+        self.sig_gen.recall_5g_mod_file(wavFloc, wavFname)
+        self.sig_gen.set_rf_lvl_offset(ws_path_loss)
+        self.sig_gen.set_rf_lvl_offset(is_path_loss, channel=2)
+        self.sig_gen.set_rf_level(ws_rf_lvl)
+        self.sig_gen.set_rf_level(-52, channel=2)
         time.sleep(20)
         neg_is_bler = self.T2.blerQuery() 
         neg_is_freq = self.sig_gen.get_frequency(channel=2)
+        print(f'Negative Interferer Freq {neg_is_freq}MHz | BLER {neg_is_bler}%')
+        print([pos_is_bler, pos_is_freq], [neg_is_bler, neg_is_freq])
+        self.sig_gen.set_rf_state('OFF')
+        self.sig_gen.set_rf_state('OFF', channel=2)
         return[[pos_is_bler, pos_is_freq], [neg_is_bler, neg_is_freq]]
 
     def psup_on_seq(self):
@@ -170,7 +180,7 @@ def main():
     ztm4sp8t_ip = '10.0.0.51'
     ztm8_ip = '10.0.0.50'
     freqs = [3840]
-    pipes = [2]
+    pipes = [1]
     temps = [25]
     loops = 1
     phyMode = 4
@@ -195,7 +205,7 @@ def main():
     sequences = {
         'RU_ON' : False,
         'RX_ON' : False,
-        'Sensitivity' : False,
+        'Sensitivity' : True,
         'ACS' : True,
         'RX_OFF' : False,
         'RU_OFF' : False,
