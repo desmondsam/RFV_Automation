@@ -149,9 +149,8 @@ class RXTestSequencer():
                 inter_bler = self.T2.blerQuery()
                 res_list.append([inter_bler, inter_freq])
                 print(f'{is_pos} Interferer Freq {inter_freq}MHz | BLER {inter_bler}%')
+        self.sig_gen.set_all_mod_rf_state('OFF')
         return [lower_res, upper_res]
-
-
 
     def psup_on_seq(self):
         self.ru_pwr_supply.set_curr()
