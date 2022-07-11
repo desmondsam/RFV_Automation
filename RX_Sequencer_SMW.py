@@ -90,32 +90,22 @@ class RXTestSequencer():
         return [rf_lvl, sensDict[rf_lvl]]
     
     def meas_acs(self, freq, bw, ws_path_loss, is_path_loss, wavFloc, wavFname, tDelay, ws_rf_lvl):
-        self.sig_gen.setup_ACSelectivity(freq=freq, bw=bw, trigDelVal=tDelay)
-        self.sig_gen.recall_5g_mod_file(wavFloc, wavFname)
-        self.sig_gen.set_rf_lvl_offset(ws_path_loss)
-        self.sig_gen.set_rf_lvl_offset(is_path_loss, channel=2)
-        self.sig_gen.set_rf_level(ws_rf_lvl)
-        self.sig_gen.set_rf_level(-52, channel=2)
-        time.sleep(20)
-        pos_is_bler = self.T2.blerQuery()
-        pos_is_freq = self.sig_gen.get_frequency(channel=2)
-        print(f'Positive Interferer Freq {pos_is_freq}MHz | BLER {pos_is_bler}%')
-        self.sig_gen.set_5g_mod_state('OFF', channel=1)
-        self.sig_gen.set_5g_mod_state('OFF', channel=2)
-        self.sig_gen.setup_ACSelectivity(freq=freq, bw=bw, trigDelVal=tDelay, freq_alloc='LOW')
-        self.sig_gen.recall_5g_mod_file(wavFloc, wavFname)
-        self.sig_gen.set_rf_lvl_offset(ws_path_loss)
-        self.sig_gen.set_rf_lvl_offset(is_path_loss, channel=2)
-        self.sig_gen.set_rf_level(ws_rf_lvl)
-        self.sig_gen.set_rf_level(-52, channel=2)
-        time.sleep(20)
-        neg_is_bler = self.T2.blerQuery() 
-        neg_is_freq = self.sig_gen.get_frequency(channel=2)
-        print(f'Negative Interferer Freq {neg_is_freq}MHz | BLER {neg_is_bler}%')
-        print([pos_is_bler, pos_is_freq], [neg_is_bler, neg_is_freq])
-        self.sig_gen.set_rf_state('OFF')
-        self.sig_gen.set_rf_state('OFF', channel=2)
-        return[[pos_is_bler, pos_is_freq], [neg_is_bler, neg_is_freq]]
+        results = []
+        for is_pos in ['HIGH', 'LOW']:
+            self.sig_gen.set_all_mod_rf_state('OFF')
+            self.sig_gen.setup_ACSelectivity(freq=freq, bw=bw, trigDelVal=tDelay, freq_alloc=is_pos)
+            self.sig_gen.recall_5g_mod_file(wavFloc, wavFname)
+            self.sig_gen.set_rf_lvl_offset(ws_path_loss)
+            self.sig_gen.set_rf_lvl_offset(is_path_loss, channel=2)
+            self.sig_gen.set_rf_level(ws_rf_lvl)
+            time.sleep(20)
+            iter_bler = self.T2.blerQuery()
+            iter_freq = self.sig_gen.get_frequency(channel=2)
+            print(f'Interferer Freq {iter_freq}MHz | BLER {iter_bler}%')
+            results.append([iter_bler, iter_freq])
+        self.sig_gen.set_all_mod_rf_state('OFF')
+        print(results)
+        return results
     
     def meas_gibb(self, freq, bw, ws_path_loss, is_path_loss, wavFloc, wavFname, tDelay, ws_rf_lvl):
         lower_res = []
@@ -201,7 +191,7 @@ class RXTestSequencer():
                                         mname = 'ACS - Negative Interferer'
                                     res = acs_res[i][0]
                                     status = VC_Datasets_RX.validate_data(res, None, 5)
-                                    results.append(VC_Datasets_RX.generate_dataset(loop=loop,pipe=pipe,testName='ACS',measName=mname,tx_freq=None,tx_pwr=None,tx_bw=bw,rx_freq=freq,rx_ws_lvl=ws_rf_lvl,rx_bw=bw,rx_channel='Middle',test_mode='3GPP',bler=res,spec_min=None,spec_max=5,res=res,unit='%',status=status,res_col='BLER',is_1_lvl=-52,is_1_freq=acs_res[i][1], is_1_type='5G_NR20'))
+                                    results.append(VC_Datasets_RX.generate_dataset(loop=loop,pipe=pipe,testName='ACS',measName=mname,tx_freq=None,tx_pwr=None,tx_bw=bw,rx_freq=freq,rx_ws_lvl=ws_rf_lvl,rx_bw=bw,rx_channel='Middle',test_mode='3GPP',bler=res,spec_min=None,spec_max=5,res=res,unit='%',status=status,res_col='BLER',is_1_lvl=-52,is_1_freq=acs_res[i][1]))
                             if(sequences['GIBB']):
                                 tname='General IBB'
                                 gibb_res = self.meas_gibb(freq, bw, ws_path_loss, is_path_loss, wavFloc, wavFname, tDelay, ws_rf_lvl)
@@ -213,7 +203,7 @@ class RXTestSequencer():
                                     for iter_list in gibb_res[i]:
                                         res = iter_list[0]
                                         status = VC_Datasets_RX.validate_data(res, None, 5)
-                                        results.append(VC_Datasets_RX.generate_dataset(loop=loop,pipe=pipe,testName=tname,measName=mname,tx_freq=None,tx_pwr=None,tx_bw=bw,rx_freq=freq,rx_ws_lvl=ws_rf_lvl,rx_bw=bw,rx_channel='Middle',test_mode='3GPP',bler=res,spec_min=None,spec_max=5,res=res,unit='%',status=status,res_col='BLER',is_1_lvl=-43,is_1_freq=iter_list[1]))
+                                        results.append(VC_Datasets_RX.generate_dataset(loop=loop,pipe=pipe,testName=tname,measName=mname,tx_freq=None,tx_pwr=None,tx_bw=bw,rx_freq=freq,rx_ws_lvl=ws_rf_lvl,rx_bw=bw,rx_channel='Middle',test_mode='3GPP',bler=res,spec_min=None,spec_max=5,res=res,unit='%',status=status,res_col='BLER',is_1_lvl=-43,is_1_freq=iter_list[1], is_1_type='5G_NR20'))
         except KeyboardInterrupt:
             print('Manual Interrupt')
         except Exception as e:
