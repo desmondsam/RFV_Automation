@@ -134,15 +134,19 @@ class RXTestSequencer():
             self.sig_gen.set_rf_lvl_offset(is_path_loss, channel=2)
             self.sig_gen.set_rf_level(ws_rf_lvl)
             if(is_pos=='LOW'):
-                lower_start = self.sig_gen.get_rf_level(channel=2)
+                lower_start = int(self.sig_gen.get_frequency(channel=2))
+                print(lower_start)
                 # inter_freq_list = range(lower_start, lower_stop-1, -1)
                 inter_freq_list = range(lower_start, lower_start-6, -1)
                 res_list = lower_res
+                print(inter_freq_list)
             else:
-                upper_start = self.sig_gen.get_rf_level(channel=2)
+                upper_start = int(self.sig_gen.get_frequency(channel=2))
+                print(upper_start)
                 # inter_freq_list = range(upper_start, upper_stop+1, 1)
                 inter_freq_list = range(upper_start, upper_start+6, 1)
                 res_list = upper_res
+                print(inter_freq_list)
             for inter_freq in inter_freq_list:
                 self.sig_gen.set_frequency(freq=inter_freq, channel=2)
                 time.sleep(20)
@@ -197,7 +201,7 @@ class RXTestSequencer():
                                         mname = 'ACS - Negative Interferer'
                                     res = acs_res[i][0]
                                     status = VC_Datasets_RX.validate_data(res, None, 5)
-                                    results.append(VC_Datasets_RX.generate_dataset(loop=loop,pipe=pipe,testName='ACS',measName=mname,tx_freq=None,tx_pwr=None,tx_bw=bw,rx_freq=freq,rx_ws_lvl=ws_rf_lvl,rx_bw=bw,rx_channel='Middle',test_mode='3GPP',bler=res,spec_min=None,spec_max=5,res=res,unit='%',status=status,res_col='BLER',is_1_lvl=-52,is_1_freq=acs_res[i][1]))
+                                    results.append(VC_Datasets_RX.generate_dataset(loop=loop,pipe=pipe,testName='ACS',measName=mname,tx_freq=None,tx_pwr=None,tx_bw=bw,rx_freq=freq,rx_ws_lvl=ws_rf_lvl,rx_bw=bw,rx_channel='Middle',test_mode='3GPP',bler=res,spec_min=None,spec_max=5,res=res,unit='%',status=status,res_col='BLER',is_1_lvl=-52,is_1_freq=acs_res[i][1], is_1_type='5G_NR20'))
                             if(sequences['GIBB']):
                                 tname='General IBB'
                                 gibb_res = self.meas_gibb(freq, bw, ws_path_loss, is_path_loss, wavFloc, wavFname, tDelay, ws_rf_lvl)
@@ -255,8 +259,9 @@ def main():
     sequences = {
         'RU_ON' : False,
         'RX_ON' : False,
-        'Sensitivity' : True,
-        'ACS' : True,
+        'Sensitivity' : False,
+        'ACS' : False,
+        'GIBB' : True,
         'RX_OFF' : False,
         'RU_OFF' : False,
     }
