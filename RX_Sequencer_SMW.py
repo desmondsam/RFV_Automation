@@ -15,7 +15,7 @@ from RS_SMW_SigGen import SMWHandler
 import Mini_Circuit_SM
 
 class RXTestSequencer():
-    def __init__(self, du_ip, sig_gen_ip, ztm4sp8t_ip, ztm8_ip, loops, xl_floc, xl_fname, cal_files_loc, wantSig_cal_fname, interSig_cal_fname, test_info):
+    def __init__(self, du_ip, sig_gen_ip, ztm4sp8t_ip, ztm8_ip, loops, band_edges, xl_floc, xl_fname, cal_files_loc, wantSig_cal_fname, interSig_cal_fname, test_info):
         self.sig_gen = SMWHandler(sig_gen_ip, cust_name = 'SigGen')
         self.ztm4sp8t_ip = ztm4sp8t_ip
         self.ztm8_ip = ztm8_ip
@@ -29,6 +29,8 @@ class RXTestSequencer():
         self.ws_cal_file = wantSig_cal_fname
         self.is_cal_file = interSig_cal_fname
         self.loops = loops
+        self.band_edges = band_edges
+        self.rfbw = band_edges[1]-band_edges[0]
         self.xl_floc = xl_floc
         self.xl_fname = xl_fname
         self.test_info = test_info
@@ -114,6 +116,42 @@ class RXTestSequencer():
         self.sig_gen.set_rf_state('OFF')
         self.sig_gen.set_rf_state('OFF', channel=2)
         return[[pos_is_bler, pos_is_freq], [neg_is_bler, neg_is_freq]]
+    
+    def meas_gibb(self, freq, bw, ws_path_loss, is_path_loss, wavFloc, wavFname, tDelay, ws_rf_lvl):
+        lower_res = []
+        upper_res = []
+        if(self.rfbw > 200):
+            lower_stop = self.band_edges[0] - 60
+            upper_stop = self.band_edges[1] + 60
+        else:
+            lower_stop = self.band_edges[0] - 20
+            upper_stop = self.band_edges[1] + 20
+        for is_pos in ['LOW', 'HIGH']:
+            self.sig_gen.set_all_mod_rf_state('OFF')
+            self.sig_gen.setup_General_IBB(freq=freq, bw=bw, trigDelVal=tDelay, freq_alloc=is_pos)
+            self.sig_gen.recall_5g_mod_file(wavFloc, wavFname)
+            self.sig_gen.set_rf_lvl_offset(ws_path_loss)
+            self.sig_gen.set_rf_lvl_offset(is_path_loss, channel=2)
+            self.sig_gen.set_rf_level(ws_rf_lvl)
+            if(is_pos=='LOW'):
+                lower_start = self.sig_gen.get_rf_level(channel=2)
+                # inter_freq_list = range(lower_start, lower_stop-1, -1)
+                inter_freq_list = range(lower_start, lower_start-6, -1)
+                res_list = lower_res
+            else:
+                upper_start = self.sig_gen.get_rf_level(channel=2)
+                # inter_freq_list = range(upper_start, upper_stop+1, 1)
+                inter_freq_list = range(upper_start, upper_start+6, 1)
+                res_list = upper_res
+            for inter_freq in inter_freq_list:
+                self.sig_gen.set_frequency(freq=inter_freq, channel=2)
+                time.sleep(20)
+                inter_bler = self.T2.blerQuery()
+                res_list.append([inter_bler, inter_freq])
+                print(f'{is_pos} Interferer Freq {inter_freq}MHz | BLER {inter_bler}%')
+        return [lower_res, upper_res]
+
+
 
     def psup_on_seq(self):
         self.ru_pwr_supply.set_curr()
@@ -161,6 +199,18 @@ class RXTestSequencer():
                                     res = acs_res[i][0]
                                     status = VC_Datasets_RX.validate_data(res, None, 5)
                                     results.append(VC_Datasets_RX.generate_dataset(loop=loop,pipe=pipe,testName='ACS',measName=mname,tx_freq=None,tx_pwr=None,tx_bw=bw,rx_freq=freq,rx_ws_lvl=ws_rf_lvl,rx_bw=bw,rx_channel='Middle',test_mode='3GPP',bler=res,spec_min=None,spec_max=5,res=res,unit='%',status=status,res_col='BLER',is_1_lvl=-52,is_1_freq=acs_res[i][1]))
+                            if(sequences['GIBB']):
+                                tname='General IBB'
+                                gibb_res = self.meas_gibb(freq, bw, ws_path_loss, is_path_loss, wavFloc, wavFname, tDelay, ws_rf_lvl)
+                                for i in [0, 1]:
+                                    if(i==0):
+                                        mname = 'General IBB - Lower'
+                                    else:
+                                        mname = 'General IBB - Upper'
+                                    for iter_list in gibb_res[i]:
+                                        res = iter_list[0]
+                                        status = VC_Datasets_RX.validate_data(res, None, 5)
+                                        results.append(VC_Datasets_RX.generate_dataset(loop=loop,pipe=pipe,testName=tname,measName=mname,tx_freq=None,tx_pwr=None,tx_bw=bw,rx_freq=freq,rx_ws_lvl=ws_rf_lvl,rx_bw=bw,rx_channel='Middle',test_mode='3GPP',bler=res,spec_min=None,spec_max=5,res=res,unit='%',status=status,res_col='BLER',is_1_lvl=-43,is_1_freq=iter_list[1]))
         except KeyboardInterrupt:
             print('Manual Interrupt')
         except Exception as e:
@@ -183,6 +233,7 @@ def main():
     pipes = [1]
     temps = [25]
     loops = 1
+    band_edges = (3700, 3980)
     phyMode = 4
     phyTimer = 0
     phyCounter = 0
@@ -228,6 +279,7 @@ def main():
         ztm4sp8t_ip = ztm4sp8t_ip,
         ztm8_ip = ztm8_ip,
         loops=loops,
+        band_edges=band_edges,
         xl_floc = xl_loc,
         xl_fname = xl_fname,
         cal_files_loc = cal_files_loc,

@@ -29,15 +29,17 @@ class SMWHandler(visa_connections.DeviceHandler):
 
     def set_rf_state(self, state = 'ON', channel=1):
         self.write(f':OUTP{channel} {state}')
-        if(channel == 1):
-            chan_str = 'A'
-        else:
-            chan_str = 'B'
-        self.plog(f'RF on channel {chan_str} turned {state}')
+        self.plog(f'RF on channel {channel} turned {state}')
     
     def set_5g_mod_state(self, mod_5g = 'ON', channel=1):
         self.write(f':SOUR{channel}:BB:NR5G:STAT {mod_5g}')
         self.plog(f'5G Modulation (Baseband) on Channel {channel} turned {mod_5g}')
+    
+    def set_all_mod_rf_state(self, state):
+        #For 2 channel signal generators only
+        for channel in [1, 2]:
+            self.set_5g_mod_state(mod_5g=state, channel=channel)
+            self.set_rf_state(state=state, channel=channel)
     
     def recall_5g_mod_file(self, floc, fname, channel=1):
         self.write(f':SOUR{channel}:BB:NR5G:SETT:LOAD "{floc}/{fname}"')
@@ -91,13 +93,15 @@ class SMWHandler(visa_connections.DeviceHandler):
         self.set_5g_trig_output_mode(output_mode = output_mode, channel=chan)
         self.plog(f'Channel {chan} 5G Downlink Baseband Configuration Completed')
     
-    def conf_5g_ul_381411_tcWizard(self, ruType='WIDE', testCase='TC72'):
+    def conf_5g_ul_381411_tcWizard(self, ruType='WIDE', testCase='TC72', tcw_rel=16):
         self.write(':SOUR:BB:NR5G:TCW:SPEC TS38141_1')
         self.plog('Setting up 38141.1 Test Case Wizard')
         self.write(f':SOUR:BB:NR5G:TCW:BSCL {ruType}')
         self.plog(f'Set up Test Case Wizard for {ruType} base station ')
         self.write(f':SOUR:BB:NR5G:TCW:TC TS381411_{testCase}')
         self.plog(f'Set up Test Case Wizard for section {testCase}')
+        self.write(f':SOUR:BB:NR5G:TCW:REL REL{tcw_rel}')
+        self.plog(f'Set up Test Case Wizard to Release{tcw_rel}')
         # time.sleep(3)
 
     def conf_5g_ul_wantedSig(self, freq=3605, bw=100, scs=30, cell_id=0, rb_offs=0, typeA_Pos=2):
@@ -151,9 +155,9 @@ class SMWHandler(visa_connections.DeviceHandler):
         self.write(':SOUR:BB:NR5G:TCW:APPL')
         self.plog('Applied Test Case Wizard Settings')
     
-    def general_tcw_setup(self, testCase, freq, bw=100, scs=30, cid=0, rb_offs=0, trigSrc='EGT1', trigDelUnit='TIME', trigDelVal='0us', freq_alloc=None, is_ueid=0, is_clid=0, fr_shift_m=None, is_rf_freq=None, treq='BLPE'):
+    def general_tcw_setup(self, testCase, freq, bw=100, scs=30, cid=0, rb_offs=0, trigSrc='EGT1', trigDelUnit='TIME', trigDelVal='0us', freq_alloc=None, is_ueid=0, is_clid=0, fr_shift_m=None, is_rf_freq=None, treq='BLPE', tcw_rel=16):
         self.set_5g_link_direction(link_direction = 'UP')
-        self.conf_5g_ul_381411_tcWizard(testCase=testCase)
+        self.conf_5g_ul_381411_tcWizard(testCase=testCase, tcw_rel=tcw_rel)
         self.conf_5g_ul_wantedSig(freq=freq, bw=bw, scs=scs, cell_id=cid, rb_offs=rb_offs)
         if(freq_alloc):
             self.conf_5g_ul_interfererSig(freq_alloc=freq_alloc, ueid=is_ueid, clid=is_clid, fr_shift_m=fr_shift_m)
@@ -173,7 +177,7 @@ class SMWHandler(visa_connections.DeviceHandler):
         self.set_rf_state()
         self.set_rf_state(channel=2)
     
-    def setup_General_IBB(self, freq, bw, scs, cid, rb_offs, trigSrc, trigDelUnit, trigDelVal, freq_alloc, is_ueid=0, is_clid=0):
+    def setup_General_IBB(self, freq, bw=100, scs=30, cid=0, rb_offs=0, trigSrc='EGT1', trigDelUnit='TIME', trigDelVal='0us', freq_alloc='LOW', is_ueid=0, is_clid=0):
         self.plog('Configuring for General In Band Blocking Measurement')
         self.general_tcw_setup(testCase='TC742A', freq=freq, bw=bw, scs=scs, cid=cid, rb_offs=rb_offs, trigSrc=trigSrc, trigDelUnit=trigDelUnit, trigDelVal=trigDelVal, freq_alloc=freq_alloc, is_ueid=is_ueid, is_clid=is_clid)
         self.set_rf_state()
@@ -250,12 +254,14 @@ def main():
         # smw.set_rf_state()
         # smw.set_5g_mod_state()
         # time.sleep(10)
-        # smw.set_rf_state('OFF')
-        # smw.set_5g_mod_state('OFF')
+        smw.set_rf_state('OFF')
+        smw.set_5g_mod_state('OFF')
+        smw.set_rf_state('OFF', channel=2)
+        smw.set_5g_mod_state('OFF', channel=2)
         # smw.set_link_direction()
         # smw.load_5g_dl_test_model('NR-FR1-TM1_1__FDD_100MHz_30kHz')
-        # smw.setup_ACSelectivity(freq=3840, trigDelVal='9.9875ms')
-        print(smw.get_frequency(2))
+        smw.setup_General_IBB(freq=3840, trigDelVal='9.9875ms', freq_alloc='HIGH')
+        # print(smw.get_frequency(2))
         smw.close()
     except Exception as e:
         print(e)
