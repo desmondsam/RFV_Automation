@@ -10,6 +10,7 @@ add_dict = {
     'Tester' : 'DesmondD',
 }
 # print(len(df))
+print('Nothin')
 newdata_dataframe = pd.DataFrame(add_dict, index = range(len(res_df)))
 df = res_df.join(newdata_dataframe)
 print(df)
