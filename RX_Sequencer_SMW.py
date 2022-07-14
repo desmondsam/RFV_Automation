@@ -174,7 +174,7 @@ class RXTestSequencer():
                 for loop in range(1, self.loops+1):
                     print(f'Collecting Data: Starting Loop {loop} of {self.loops}')
                     for pipe in pipes:
-                        print(f'Testing: Switch to Pipe {pipe} and Set Path Loss in Sig Gen')
+                        print(f'Switching to Pipe {pipe}')
                         Mini_Circuit_SM.MN_Switch(f'Pipe{pipe-1}', self.ztm4sp8t_ip, self.ztm8_ip)
                         for freq in freqs:
                             ws_path_loss = Fetch_Path_Loss.fetch_loss(pipe, freq, self.cal_file_loc, self.ws_cal_file)
@@ -217,8 +217,6 @@ class RXTestSequencer():
         finally:
             General_Utils.namTupList_to_spreadsheet(results, self.xl_fname, self.xl_floc, self.test_info) 
             self.close()
-
-
 
 def main():
     #### Inputs ####
