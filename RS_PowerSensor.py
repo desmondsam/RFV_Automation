@@ -34,17 +34,24 @@ class PowSensHandler(visa_connections.DeviceHandler):
         self.write('INIT')
         time.sleep(2)
 
+    def set_cable_loss(self, loss):
+        self.write(f'CORR:OFFS:STAT ON')
+        self.write(f'CORR:OFFS {loss}')
 
 def main():
     #### Inputs ####
     powsens_usb_id = '0x0AAD::0x0137::102850'
     #### End Inputs ####
     PowSens = PowSensHandler(usb_id=powsens_usb_id, cust_name='PowSens')
-    PowSens.initialize()
-    time.sleep(5)
-    PowSens.set_freq(3750e6)
+    # PowSens.initialize()
+    # time.sleep(5)
     PowSens.prep_measurement()
+    PowSens.set_freq(3750e6)
+    PowSens.set_cable_loss(20)
     print(PowSens.get_power())
+    # offs_state = PowSens.query('CORR:OFFS:STAT?')
+    # time.sleep(2)
+    # print(offs_state)
     PowSens.close()
 
 if __name__ == '__main__':

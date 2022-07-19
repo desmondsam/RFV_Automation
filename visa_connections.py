@@ -64,8 +64,8 @@ class DeviceHandler(object):
 
 def main():
     try:
-        my_dev = DeviceHandler(tcp_ip='192.168.255.205', cust_name='SigGen')
-        # my_dev = DeviceHandler(usb_id='0x0AAD::0x0137::102850', cust_name='PowSens')
+        # my_dev = DeviceHandler(tcp_ip='192.168.255.201', cust_name='SigGen')
+        my_dev = DeviceHandler(usb_id='0x0AAD::0x0137::102850', cust_name='PowSens')
         # print (my_dev.query('OUTP?'))
         if(my_dev.device):
             print (my_dev.device)
