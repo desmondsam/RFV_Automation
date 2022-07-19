@@ -95,6 +95,7 @@ class RXTestSequencer():
             self.sig_gen.set_all_mod_rf_state('OFF')
             self.sig_gen.setup_ACSelectivity(freq=freq, bw=bw, trigDelVal=tDelay, freq_alloc=is_pos)
             self.sig_gen.recall_5g_mod_file(wavFloc, wavFname)
+            # self.sig_gen.set_5g_trig_mode(trig_mode='AAUT')
             self.sig_gen.set_rf_lvl_offset(ws_path_loss)
             self.sig_gen.set_rf_lvl_offset(is_path_loss, channel=2)
             self.sig_gen.set_rf_level(ws_rf_lvl)
@@ -120,25 +121,28 @@ class RXTestSequencer():
             self.sig_gen.set_all_mod_rf_state('OFF')
             self.sig_gen.setup_General_IBB(freq=freq, bw=bw, trigDelVal=tDelay, freq_alloc=is_pos)
             self.sig_gen.recall_5g_mod_file(wavFloc, wavFname)
+            # self.sig_gen.set_5g_trig_mode(trig_mode='AAUT')
             self.sig_gen.set_rf_lvl_offset(ws_path_loss)
             self.sig_gen.set_rf_lvl_offset(is_path_loss, channel=2)
             self.sig_gen.set_rf_level(ws_rf_lvl)
             if(is_pos=='LOW'):
                 lower_start = int(self.sig_gen.get_frequency(channel=2))
                 print(lower_start)
-                # inter_freq_list = range(lower_start, lower_stop-1, -1)
-                inter_freq_list = range(lower_start, lower_start-6, -1)
+                inter_freq_list = range(lower_start, lower_stop-1, -1)
+                # inter_freq_list = range(lower_start, lower_start-6, -1)
                 res_list = lower_res
                 print(inter_freq_list)
             else:
                 upper_start = int(self.sig_gen.get_frequency(channel=2))
                 print(upper_start)
-                # inter_freq_list = range(upper_start, upper_stop+1, 1)
-                inter_freq_list = range(upper_start, upper_start+6, 1)
+                inter_freq_list = range(upper_start, upper_stop+1, 1)
+                # inter_freq_list = range(upper_start, upper_start+6, 1)
                 res_list = upper_res
                 print(inter_freq_list)
             for inter_freq in inter_freq_list:
                 self.sig_gen.set_frequency(freq=inter_freq, channel=2)
+                # self.sig_gen.sync_outp_ext_trig()
+                self.sig_gen.arm_trigger()
                 time.sleep(20)
                 inter_bler = self.T2.blerQuery()
                 res_list.append([inter_bler, inter_freq])
@@ -170,7 +174,7 @@ class RXTestSequencer():
                 for loop in range(1, self.loops+1):
                     print(f'Collecting Data: Starting Loop {loop} of {self.loops}')
                     for pipe in pipes:
-                        print(f'Testing: Switch to Pipe {pipe} and Set Path Loss in Sig Gen')
+                        print(f'Switching to Pipe {pipe}')
                         Mini_Circuit_SM.MN_Switch(f'Pipe{pipe-1}', self.ztm4sp8t_ip, self.ztm8_ip)
                         for freq in freqs:
                             ws_path_loss = Fetch_Path_Loss.fetch_loss(pipe, freq, self.cal_file_loc, self.ws_cal_file)
@@ -213,8 +217,6 @@ class RXTestSequencer():
         finally:
             General_Utils.namTupList_to_spreadsheet(results, self.xl_fname, self.xl_floc, self.test_info) 
             self.close()
-
-
 
 def main():
     #### Inputs ####

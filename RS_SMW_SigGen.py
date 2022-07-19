@@ -143,6 +143,10 @@ class SMWHandler(visa_connections.DeviceHandler):
             self.write(f':SOUR:BB:NR5G:TRIG:EXT:DEL {delay_val}')
         self.plog(f'5G Uplink Trigger Delay set to {delay_val}')
     
+    def arm_trigger(self, channel=1):
+        self.write(f':SOUR{channel}:BB:NR5G:TRIG:ARM:EXEC')
+        self.plog('Trigger Armed')
+    
     def sync_outp_ext_trig(self):
         self.write(':SOUR:BB:NR5G:TRIG:EXT:SYNC:OUTP 0')
         self.write(':SOUR:BB:NR5G:TRIG:EXT:SYNC:OUTP 1')
@@ -204,6 +208,7 @@ class SMWHandler(visa_connections.DeviceHandler):
     def manual_setup_ultest(self, floc, fname, trigDelay):
         self.set_ref_clk_src('EXT')
         self.recall_5g_mod_file(floc, fname)
+        # self.set_5g_trig_mode(trig_mode='AAUT')
         self.conf_5g_ul_trigger(delay_val=trigDelay)
         self.sync_outp_ext_trig()
         self.set_5g_mod_state('ON')
