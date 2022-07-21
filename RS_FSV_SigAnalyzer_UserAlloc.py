@@ -1,3 +1,4 @@
+from ftplib import all_errors
 import visa_connections
 import time
 import pandas as pd
@@ -203,11 +204,18 @@ class FSVHandler(visa_connections.DeviceHandler):
         self.write(":MMEM:LOAD:TMOD:CC{} '{}'".format(cc, testModel))
         self.plog(f'Loaded Test Model File {testModel} for Carrier {cc}')
     
-    def setup_ACLR(self, freq = 3640, band = 'N78', testModel = None, tGDelay = '86us', tGLength = '3.715ms', trigSrc = 'EXT', sweepTime = '50ms', sweepType = 'AUTO'):
+    def load_user_alloc(self, alloc_file, cc=1):
+        self.write(f"MMEM:LOAD:DEM:CC{cc} '{alloc_file}'")
+        time.sleep(1)
+        self.plog(f'Loaded User Allcoation File {alloc_file} for Carrier {cc}')
+    
+    def setup_ACLR(self, freq = 3640, band = 'N78', sig_file_name = None, user_alloc = None, tGDelay = '86us', tGLength = '3.715ms', trigSrc = 'EXT', sweepTime = '50ms', sweepType = 'AUTO'):
         self.write('CONF:MEAS ACLR')
         self.set_center_freq(freq)
-        if(testModel):
-            self.load_test_model(testModel)
+        if(sig_file_name):
+            self.load_test_model(sig_file_name)
+        elif(user_alloc):
+            self.load_user_alloc(user_alloc)
         self.plog('Configuring ACLR Measurement')
         self.set_deploymenet_frange(freq)
         self.set_bts_type()
@@ -257,25 +265,29 @@ class FSVHandler(visa_connections.DeviceHandler):
             gap_aclr_res = [None, None, None, None]
         return acp_res[:8] + gap_aclr_res
     
-    def setup_EVM_FErr(self, sig_file_name, noc = 1, freq = 3640, band = 'N78', sweepTime = '3.5s', trigSrc='EXT'):
+    def setup_EVM_FErr(self, sig_file_name, cust_alloc = None, noc = 1, freq = 3640, band = 'N78', sweepTime = '3.5s', trigSrc='EXT'):
         self.write('CONF:MEAS EVM')
         time.sleep(5)
         self.set_single_sweep()
         self.set_noc(noc)
         self.set_center_freq(freq) #Change to Multi-Carrier for 2C+
         for cc in range(1, noc+1):
-            self.load_test_model(testModel = sig_file_name, cc = cc)
-        self.set_oper_band(band)
-        self.set_deploymenet_frange(freq)
-        self.set_trig_source(trigSrc)
-        self.set_sweep_time(sweepTime)
-        for cc in range(1, noc+1):
-            self.write('CONF:DL:CC{}:SSBL:DET AUTO'.format(cc))
-            self.write('CONF:DL:CC{}:FRAM:BWP:DET AUTO'.format(cc))
-            self.write('CONF:DL:CC{}:PLC:CID {}'.format(cc, cc))
+            if(cust_alloc):
+                self.load_user_alloc(alloc_file=cust_alloc, cc=cc)
+                self.set_trig_source(trigSrc)
+                # self.set_sweep_time(sweepTime)
+            else:
+                self.load_test_model(testModel = sig_file_name, cc = cc)
+                self.set_oper_band(band)
+                self.set_deploymenet_frange(freq)
+                self.set_trig_source(trigSrc)
+                self.set_sweep_time(sweepTime)
+                self.write('CONF:DL:CC{}:SSBL:DET AUTO'.format(cc))
+                self.write('CONF:DL:CC{}:FRAM:BWP:DET AUTO'.format(cc))
+                self.write('CONF:DL:CC{}:PLC:CID {}'.format(cc, cc))
     
     def measure_EVM_FErr(self, tm = '1_1', noc = 1, refLvl = 55, refLvlOffs = 45):
-        self.measurement_prep(refLvl, refLvlOffs)
+        self.measurement_prep(refLvl, refLvlOffs, meas_time=25)
         if(tm in ['3_3', '1_1']):
             mod = 'QP'
         elif(tm == '3_2'):
@@ -289,14 +301,22 @@ class FSVHandler(visa_connections.DeviceHandler):
         evm_res = []
         for cc in range(1, noc+1):
             evm_aver = self.query_ascii_values(':FETC:CC{}:ISRC:FRAM:SUMM:EVM:DS{}:AVER?'.format(cc, mod))[0]
+            # time.sleep(2)
             evm_max = self.query_ascii_values(':FETC:CC{}:ISRC:FRAM:SUMM:EVM:DS{}:MAX?'.format(cc, mod))[0]
+            # time.sleep(2)
             freqErr = self.query_ascii_values(':FETC:CC{}:ISRC:FRAM:SUMM:FERR:AVER?'.format(cc))[0]
+            # time.sleep(2)
             ostp = self.query_ascii_values(':FETC:CC{}:ISRC:FRAM:SUMM:OSTP:AVER?'.format(cc))[0]
+            # time.sleep(2)
             evm_res.append([cc, round(evm_aver, 2), round(evm_max, 2), round(freqErr, 2), round(ostp, 2)])
         return evm_res
     
-    def setup_OBUE_5g(self, tm, freq = 3640, band = 'N78', mask = 'CAT B', fstart = 3370, fstop = 3840, tGDelay = '86us', tGLength = '3.715ms', trigSrc = 'EXT', sweepType = 'SWE'):
+    def setup_OBUE_5g(self, sig_file_name, user_alloc=None, freq = 3640, band = 'N78', mask = 'CAT B', fstart = 3370, fstop = 3840, tGDelay = '86us', tGLength = '3.715ms', trigSrc = 'EXT', sweepType = 'SWE'):
         self.write('CONF:MEAS ESP')
+        if(user_alloc):
+            self.load_user_alloc(user_alloc)
+        else:
+            self.load_test_model(sig_file_name)
         self.set_center_freq(freq)
         self.set_single_sweep()
         offs_start = round((freq - fstart), 1)
@@ -304,12 +324,11 @@ class FSVHandler(visa_connections.DeviceHandler):
         span = max(offs_start, offs_stop) * 2
         self.set_bts_type()
         self.set_oper_band(band)
-        self.load_test_model(tm)
         self.write(f':SENS:POW:{mask}') #CAT:B OPT2
         self.set_span(f'{span} MHz')
+        self.set_trig_source(trigSrc)
         if(tGDelay and tGLength):
             self.set_trig_gate(gdelay = tGDelay, glength = tGLength)
-        self.set_trig_source(trigSrc)
         self.set_sweep_type(sweepType)
         self.set_deploymenet_frange(freq)
         rng_count = int(self.query('ESP1:RANG:COUN?')) + 1
@@ -551,33 +570,34 @@ if __name__ == "__main__":
     # tml = [tm]
     # tModL = [testModel]
     # bws = [bw, bw]
-    frequency = 3610 # Frequency of signal generated
-    tm = '3_1a'
+    frequency = 3840 # Frequency of signal generated
+    tm = '1_1'
     duplex = 'TDD'
     bw = 100
     scs = 30
     sig_analyzer_ip = '192.168.255.202'
-    band = 'N78'
-    refLvl = 45
-    refLvlOffs = 45
-    tGDelay = '18us'
-    tGLength = '3.7ms'
+    band = 'N77'
+    refLvl = 43.75
+    refLvlOffs = 39.64
+    tGDelay = '3ms'
+    tGLength = '3.5ms'
     noc = 1
     spurs_file = 'C:\MidasRFV\Midas_Colocate_Bands_and_Spur_Limits.xlsx'
     sig_file_name = f'NR-FR1-TM{tm}__{duplex}_{bw}MHz_{scs}kHz' # Pre-Defined file to be loaded
+    # alloc_file=r'C:\R_S\Instr\vr_testmac_qpsk.allocation'
     #####End#####
     try:
         fsv = FSVHandler(tcp_ip=sig_analyzer_ip, cust_name='SigAnalyzer')
-        print(fsv.check_identity())
+        # print(fsv.check_identity())
         # print(fsv.measure_ACLR(0, 0))
         # print(fsv.get_mode_list())
         # fsv.create_new_mode()
         # fsv.sel_existing_mode('Spec OBUE')
         # fsv.set_rbw(1000000)
         # fsv.set_center_freq(frequency)
-        # fsv.setup_OBUE_5g(sig_file_name, frequency, band)
-        # print(fsv.meas_OBUE_5g(refLvl, refLvlOffs))
-        # fsv.setup_EVM_FErr(sig_file_name, noc, frequency, band)
+        fsv.setup_OBUE_5g(sig_file_name = sig_file_name, user_alloc=None, freq=frequency, band=band, fstart=3700, fstop=3980, tGDelay='3ms', tGLength='3.5ms')
+        print(fsv.meas_OBUE_5g(refLvl, refLvlOffs))
+        # fsv.setup_EVM_FErr(sig_file_name, alloc_file, noc, frequency, band)
         # print(fsv.measure_EVM_FErr(tm, noc, refLvl, refLvlOffs))
         # fsv.setup_tx_on_off_pwr(sig_file_name, freq=frequency)
         # print(fsv.meas_tx_on_off_pwr())
@@ -603,6 +623,7 @@ if __name__ == "__main__":
         # time.sleep(15)
         # fsv.set_ext_ref_clk()
         # fsv.set_center_freq(freq=frequency)
+        # fsv.load_user_alloc(alloc_file=r'C:\R_S\Instr\vr_testmac_qpsk.allocation')
         fsv.close()
     except Exception as e:
         print(e)

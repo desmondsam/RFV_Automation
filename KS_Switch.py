@@ -109,15 +109,13 @@ if __name__ == '__main__':
         ### Inputs ###
         switch_ip = '192.168.255.204'
         slave_switch_ip = '192.168.255.206'
-        ant = 1
+        ant = 33
         from_sig_gen = False
         ### End Inputs ###
         switch = KSSwitchHandler(tcp_ip=switch_ip, cust_name='KS_Switch')
         switch_slave = KSSwitchHandler(tcp_ip=slave_switch_ip, cust_name='KS_Switch_Slave')
-        # switch.clear()
-        # switch.reset()
-        # switch_slave.clear()
-        # switch_slave.reset()
+        # switch.initialize()
+        # switch_slave.initialize()
         # time.sleep(15)
         # switch.set_atten_val('ATT33', '0')
         # switch.set_atten_val('ATT36', '20')
