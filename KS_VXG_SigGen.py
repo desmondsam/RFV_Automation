@@ -74,7 +74,7 @@ class VXGHandler(visa_connections.DeviceHandler):
 
 def main():
     """Inputs"""
-    vxg_ip = '192.168.255.205'
+    vxg_ip = '10.0.0.80'
     freq = 680.5
     rf_level = -50
     trig_delay = '9.99985ms'
@@ -86,7 +86,7 @@ def main():
     wanted_channel = 1
     try:
         vxg = VXGHandler(tcp_ip=vxg_ip, cust_name='VXG')
-        # print(vxg.check_identity())
+        print(vxg.check_identity())
         # vxg.initialize()
         # time.sleep(10)
         # vxg.set_sig_file_mode(channel=1)
@@ -126,8 +126,8 @@ def main():
         # vxg.sig_file_state()
         # vxg.set_rf_state()
         # vxg.sig_file_state('OFF')
-        vxg.initialize()
-        time.sleep(10)
+        # vxg.initialize()
+        # time.sleep(10)
         # vxg.set_sig_file_mode(mode='WAV', channel=wanted_channel)
         # vxg.load_wav_file(floc=sig_file_loc, fname=sig_file_name, channel=wanted_channel)
         # vxg.set_wav_file_trig(mode=trig_mode, src=trig_src, channel=wanted_channel)

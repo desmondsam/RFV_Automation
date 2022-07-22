@@ -556,7 +556,7 @@ if __name__ == "__main__":
     duplex = 'TDD'
     bw = 100
     scs = 30
-    sig_analyzer_ip = '192.168.255.202'
+    sig_analyzer_ip = '10.0.0.78'
     band = 'N78'
     refLvl = 45
     refLvlOffs = 45

@@ -216,7 +216,7 @@ class SMWHandler(visa_connections.DeviceHandler):
     
 def main():
     try:
-        smw_ip = '10.0.0.3' #####
+        smw_ip = '10.0.0.79' #####
         smw = SMWHandler(tcp_ip = smw_ip, cust_name='SigGen', parent_logger='Sig.GUI')
         # smw.set_rf_state('OFF')
         # smw.set_5g_mod_state('OFF')
@@ -266,12 +266,12 @@ def main():
         # smw.set_link_direction()
         # smw.load_5g_dl_test_model('NR-FR1-TM1_1__FDD_100MHz_30kHz')
         # smw.setup_General_IBB(freq=3840, trigDelVal='9.9875ms', freq_alloc='HIGH')
-        # print(int(smw.get_frequency(2)))
-        lower_start = int(smw.get_frequency(channel=2))
-        print(lower_start)
+        print(int(smw.get_frequency(2)))
+        # lower_start = int(smw.get_frequency(channel=2))
+        # print(lower_start)
         # inter_freq_list = range(lower_start, lower_stop-1, -1)
-        inter_freq_list = range(lower_start, lower_start-6, -1)
-        print(inter_freq_list[2])
+        # inter_freq_list = range(lower_start, lower_start-6, -1)
+        # print(inter_freq_list[2])
         smw.close()
     except Exception as e:
         print(e)

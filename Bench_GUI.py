@@ -22,10 +22,10 @@ with st.sidebar:
     device = st.radio('Pick a Device', ['Power Supply', 'Switch', 'Analyzer', 'Power Sensor'], help='KS Power Supply (N5767),  KS Switch, R&S FSV (or) R&S Sensor')
     supp_stat = st.empty()
     ip_exp = st.expander('Update Device IP')
-    ip_exp.text_input(label='Power Supply IP', value='192.168.255.207', key='pwr_supp_ip')
-    ip_exp.text_input(label='Master Switch IP', value='192.168.255.204', key='m_switch_ip')
-    ip_exp.text_input(label='Slave Switch IP', value='192.168.255.206', key='s_switch_ip')
-    ip_exp.text_input(label='Signal Analyzer IP', value='192.168.255.202', key='fsv_ip')
+    ip_exp.text_input(label='Power Supply IP', value='10.0.0.77', key='pwr_supp_ip')
+    ip_exp.text_input(label='Master Switch IP', value='10.0.0.81', key='m_switch_ip')
+    ip_exp.text_input(label='Slave Switch IP', value='10.0.0.82', key='s_switch_ip')
+    ip_exp.text_input(label='Signal Analyzer IP', value='10.0.0.78', key='fsv_ip')
     ip_exp.text_input(label='Power Sensor ID', value='0x0AAD::0x0137::102850', key='pwr_sens_id')
 
 if(device == 'Power Supply'):

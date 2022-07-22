@@ -73,7 +73,7 @@ class PwrSupplyHandler(visa_connections.DeviceHandler):
 
 if __name__ == "__main__":
     #####Inputs#####
-    unit_supp_gpib = '192.168.255.207'
+    unit_supp_gpib = '10.0.0.77'
     #####End Inputs#####
     unit_supply = PwrSupplyHandler(tcp_ip = unit_supp_gpib, cust_name='USupply')
     # sysmod_supply = PwrSupplyHandler(smod_supp_gpib)

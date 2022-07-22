@@ -107,13 +107,15 @@ class KSSwitchHandler(visa_connections.DeviceHandler):
 if __name__ == '__main__':
     try:
         ### Inputs ###
-        switch_ip = '192.168.255.204'
-        slave_switch_ip = '192.168.255.206'
+        switch_ip = '10.0.0.81'
+        slave_switch_ip = '10.0.0.82'
         ant = 33
         from_sig_gen = False
         ### End Inputs ###
         switch = KSSwitchHandler(tcp_ip=switch_ip, cust_name='KS_Switch')
         switch_slave = KSSwitchHandler(tcp_ip=slave_switch_ip, cust_name='KS_Switch_Slave')
+        print(switch.check_identity())
+        print(switch_slave.check_identity())
         # switch.initialize()
         # switch_slave.initialize()
         # time.sleep(15)
@@ -125,14 +127,16 @@ if __name__ == '__main__':
         # print(switch.query_switch_state('SW4'))
         # print(switch.query_switch_state('SW3'))
         # print(switch.query_switch_state('SW9'))
-        switch.set_out_to_san()
-        if(from_sig_gen):
-            switch.set_out_from_gen()
-        if(ant < 33):
-            switch.switch_ant(ant)
-        else:
-            switch_slave.slave_switch_ant(ant, switch_ip, rf_source=from_sig_gen)
         # print(f'Total Attenuation of Switch is {switch.get_total_att()} dB')
+        #############################################
+        # switch.set_out_to_san()
+        # if(from_sig_gen):
+        #     switch.set_out_from_gen()
+        # if(ant < 33):
+        #     switch.switch_ant(ant)
+        # else:
+        #     switch_slave.slave_switch_ant(ant, switch_ip, rf_source=from_sig_gen)
+        ##############################################
         switch.close()
         switch_slave.close()
     except Exception as e:
