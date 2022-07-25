@@ -68,7 +68,7 @@ class PwrSupplyHandler(visa_connections.DeviceHandler):
     
     def str_data(self):
         psup_data = self.get_psup_data()
-        return('Voltage: {voltage} V\nCurrent: {current} A\nPower:{power} W\nState: {state}'.format(**psup_data))
+        return('Voltage: {voltage} V Current: {current} A Power:{power} W State: {state}'.format(**psup_data))
 
 
 if __name__ == "__main__":

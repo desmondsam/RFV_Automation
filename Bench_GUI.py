@@ -20,7 +20,6 @@ with st.sidebar:
         st.image(image)
     st.header('Devices')
     device = st.radio('Pick a Device', ['Power Supply', 'Switch', 'Analyzer', 'Power Sensor'], help='KS Power Supply (N5767),  KS Switch, R&S FSV (or) R&S Sensor')
-    supp_stat = st.empty()
     ip_exp = st.expander('Update Device IP')
     ip_exp.text_input(label='Power Supply IP', value='10.0.0.77', key='pwr_supp_ip')
     ip_exp.text_input(label='Master Switch IP', value='10.0.0.81', key='m_switch_ip')
@@ -32,7 +31,7 @@ if(device == 'Power Supply'):
     full_page = st.container()
     info_bar = st.empty()
     stat_bar = st.empty()
-    ff_c1, ff_c2 = full_page.columns(2)
+    ff_c1, ff_c2, ff_c3 = full_page.columns([2, 2, 1.5])
     ff_c1.header('Power Supply')
     ip_val = st.session_state.pwr_supp_ip
     try:
@@ -41,11 +40,9 @@ if(device == 'Power Supply'):
         stat_bar.error('Cannot communicate with current IP. Please update IP')
         usupp = None
     if(usupp and usupp.device):
-        if 'ps_state' not in st.session_state:
-            supp_state = usupp.query('OUTP?')
-            st.session_state['ps_state'] = supp_state
 
         ff_c2.header('DC Settings')
+        ff_c3.header('PS Data')
 
         pwr_sett_form = ff_c2.form('DC Settings')
         volt_lmt = pwr_sett_form.slider(label='Voltage Limit', max_value=60, value=48, step=1)
@@ -64,9 +61,17 @@ if(device == 'Power Supply'):
             stat_bar.success('Power Supply Turned Off')
             st.session_state['ps_state'] = False
 
-        ff_c1.write('**Get Power Supply Data**')
-        if ff_c1.button('Get PS Data'):
-            info_bar.info(usupp.str_data())
+        ff_c3.write('**Power Supply Data**')
+        if ff_c3.button('Get PS Data'):
+            volt = usupp.get_voltage()
+            curr = usupp.get_current()
+            pwr = usupp.get_Pwr()
+            state = usupp.get_output_state()
+            ff_c3.write(f'Voltage: {volt} V')
+            ff_c3.write(f'Current: {curr} A')
+            ff_c3.write(f'Power: {pwr} W')
+            ff_c3.write(f'State: {state}')
+            # ff_c3.write(usupp.str_data())
             stat_bar.success(f'Fetched Power Supply Data')
         
         if set_limits:
@@ -74,10 +79,6 @@ if(device == 'Power Supply'):
             usupp.set_curr(curr_lmt)
             stat_bar.success(f'Power Supply Limits set to Voltage : {volt_lmt} V, Current : {curr_lmt} A')
         
-        if(st.session_state['ps_state']==True):
-            supp_stat.success('Supply is : ON')
-        else:
-            supp_stat.error('Supply is : OFF')
         usupp.close()
     else:
         stat_bar.error('Cannot communicate with current IP. Please update IP')
